@@ -54,11 +54,12 @@ const getNavigation = (userRole?: string): NavigationItem[] => {
             hasDropdown: true,
             subItems: [
                 { name: 'All Products', to: '/products', icon: ShoppingBagIcon },
-                { name: 'Purchase', to: '/products/purchase', icon: ShoppingCartIcon },
-                { name: 'Purchase List', to: '/purchases', icon: ClipboardDocumentListIcon },
+                { name: 'Add Stock', to: '/stock-intake/add', icon: DocumentPlusIcon },
+                { name: 'Stock Intake', to: '/stock-intake', icon: ClipboardDocumentListIcon },
+                { name: 'Daily Stock', to: '/daily-stock', icon: CalendarDaysIcon },
                 { name: 'Categories', to: '/categories', icon: TagIcon },
                 { name: 'Units', to: '/units', icon: RectangleStackIcon },
-                { name: 'Suppliers', to: '/suppliers', icon: BuildingStorefrontIcon },
+                { name: 'Factories', to: '/suppliers', icon: BuildingStorefrontIcon },
             ]
         },
         {
@@ -73,15 +74,15 @@ const getNavigation = (userRole?: string): NavigationItem[] => {
             ]
         },
         {
-            name: 'Customers',
+            name: 'Distributors',
             to: '/customers',
             icon: UserGroupIcon,
             badge: null,
             hasDropdown: true,
             subItems: [
-                { name: 'Create Customer', to: '/customers/new', icon: UserPlusIcon },
-                { name: 'Customer List', to: '/customers', icon: UserGroupIcon },
-                { name: 'Customer Ledger', to: '/customers/ledger', icon: BookOpenIcon },
+                { name: 'Create Distributor', to: '/customers/new', icon: UserPlusIcon },
+                { name: 'Distributor List', to: '/customers', icon: UserGroupIcon },
+                { name: 'Distributor Ledger', to: '/customers/ledger', icon: BookOpenIcon },
             ]
         },
         {

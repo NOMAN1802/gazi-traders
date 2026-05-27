@@ -54,8 +54,8 @@ const CustomersPage = () => {
         <div className="space-y-8">
             <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.35em] text-brand">CRM Layer</p>
-                <h1 className="mt-2 text-3xl font-bold text-slate-900">Customer List</h1>
-                <p className="text-sm text-slate-500">All registered customers in your CRM.</p>
+                <h1 className="mt-2 text-3xl font-bold text-slate-900">Distributor List</h1>
+                <p className="text-sm text-slate-500">All registered distributors in your CRM.</p>
             </div>
 
             {/* Search */}
@@ -126,7 +126,7 @@ const CustomersPage = () => {
                     </table>
                     {filtered.length === 0 && (
                         <div className="py-10 text-center text-sm text-slate-500">
-                            {search ? 'No customers match your search.' : 'No customers yet. Create your first one.'}
+                            {search ? 'No distributors match your search.' : 'No distributors yet. Create your first one.'}
                         </div>
                     )}
                 </div>

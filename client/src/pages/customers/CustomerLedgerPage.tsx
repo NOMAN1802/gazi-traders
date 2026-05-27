@@ -311,7 +311,7 @@ const CustomerLedgerPage = () => {
                         <ArrowLeftIcon className="h-6 w-6" />
                     </button>
                     <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.35em] text-brand">Customer Ledger</p>
+                        <p className="text-sm font-semibold uppercase tracking-[0.35em] text-brand">Distributor Ledger</p>
                         <h1 className="mt-2 text-3xl font-bold text-slate-900">{customer.name}</h1>
                         <p className="text-sm text-slate-500">
                             {customer.phone && `Phone: ${customer.phone}`}

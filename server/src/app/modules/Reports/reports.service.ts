@@ -3,6 +3,7 @@ import { Expense } from "../Expense/expense.model";
 import { Order } from "../Order/order.model";
 import { Product } from "../Product/product.model";
 import { Return } from "../Return/return.model";
+import { StockIntake } from "../StockIntake/stock-intake.model";
 
 const getStockReport = async () => {
   const products = await Product.find({ isDeleted: false }).sort({
@@ -12,7 +13,7 @@ const getStockReport = async () => {
   const summary = {
     totalProducts: products.length,
     totalStockValue: products.reduce(
-      (sum, p) => sum + p.stockQuantity * p.purchasePrice,
+      (sum, p) => sum + p.stockQuantity * (p.purchasePrice ?? 0),
       0
     ),
     lowStockItems: products.filter((p) => p.stockQuantity <= 10).length,
@@ -362,6 +363,92 @@ const getFinancialSummary = async (startDate?: Date, endDate?: Date) => {
   };
 };
 
+const getDailyStock = async (date: string) => {
+  const target = new Date(date);
+  const startOfDay = new Date(target);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(target);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const [products, intakeOn, intakeAfter, ordersOn, ordersAfter] = await Promise.all([
+    Product.find({ isDeleted: false }).sort({ name: 1 }),
+
+    StockIntake.aggregate([
+      { $match: { createdAt: { $gte: startOfDay, $lte: endOfDay }, isDeleted: false } },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.product', total: { $sum: '$items.receivedPieces' } } },
+    ]),
+
+    StockIntake.aggregate([
+      { $match: { createdAt: { $gt: endOfDay }, isDeleted: false } },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.product', total: { $sum: '$items.receivedPieces' } } },
+    ]),
+
+    Order.aggregate([
+      { $match: { createdAt: { $gte: startOfDay, $lte: endOfDay }, isDeleted: false } },
+      { $unwind: '$items' },
+      { $group: {
+        _id: { product: '$items.product', customer: '$customer.name' },
+        qty: { $sum: '$items.quantity' },
+      }},
+    ]),
+
+    Order.aggregate([
+      { $match: { createdAt: { $gt: endOfDay }, isDeleted: false } },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.product', total: { $sum: '$items.quantity' } } },
+    ]),
+  ]);
+
+  const intakeOnMap = new Map<string, number>(intakeOn.map((r: any) => [r._id.toString(), r.total]));
+  const intakeAfterMap = new Map<string, number>(intakeAfter.map((r: any) => [r._id.toString(), r.total]));
+  const salesAfterMap = new Map<string, number>(ordersAfter.map((r: any) => [r._id.toString(), r.total]));
+
+  const deliveriesMap = new Map<string, Map<string, number>>();
+  const customerSet = new Set<string>();
+  for (const r of ordersOn) {
+    const pid = r._id.product.toString();
+    const cname = r._id.customer as string;
+    customerSet.add(cname);
+    if (!deliveriesMap.has(pid)) deliveriesMap.set(pid, new Map());
+    deliveriesMap.get(pid)!.set(cname, r.qty);
+  }
+  const customers = Array.from(customerSet).sort();
+
+  const rows = products.map((p) => {
+    const pid = p._id!.toString();
+    const stockInOnDate = intakeOnMap.get(pid) ?? 0;
+    const stockInAfterDate = intakeAfterMap.get(pid) ?? 0;
+    const salesAfterDate = salesAfterMap.get(pid) ?? 0;
+    const customerDeliveries = deliveriesMap.get(pid) ?? new Map<string, number>();
+    const totalDelivery = Array.from(customerDeliveries.values()).reduce((s, v) => s + v, 0);
+
+    // previousStock = currentStock - stockInOnDate + totalDelivery - stockInAfterDate + salesAfterDate
+    const previousStock = Math.max(0, p.stockQuantity - stockInOnDate + totalDelivery - stockInAfterDate + salesAfterDate);
+    const total = previousStock + stockInOnDate;
+    const balance = total - totalDelivery;
+
+    const deliveries: Record<string, number> = {};
+    customers.forEach((c) => { deliveries[c] = customerDeliveries.get(c) ?? 0; });
+
+    return {
+      _id: pid,
+      name: p.name,
+      cartoonSize: p.cartoonSize ?? null,
+      unit: p.unit,
+      previousStock,
+      stockIn: stockInOnDate,
+      total,
+      deliveries,
+      totalDelivery,
+      balance: Math.max(0, balance),
+    };
+  }).filter((r) => r.previousStock > 0 || r.stockIn > 0 || r.totalDelivery > 0);
+
+  return { date, customers, products: rows };
+};
+
 export const ReportsServices = {
   getStockReport,
   getOrderReport,
@@ -370,4 +457,5 @@ export const ReportsServices = {
   getExpenseReport,
   getRevenueReport,
   getFinancialSummary,
+  getDailyStock,
 };

@@ -7,6 +7,10 @@ export type OrderItem = {
     productName: string;
     categoryId?: string;
     categoryName?: string;
+    unit?: 'Dozen' | 'Cartoon';
+    cartoonSize?: number;
+    inputQty?: number;
+    free?: number;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
@@ -21,12 +25,15 @@ export type Order = {
         email?: string;
         address?: string;
     };
+    customerId?: string;
     status: 'pending' | 'completed' | 'partial';
     totalAmount: number;
     subtotal?: number;
     discount?: number;
     tax?: number;
+    previousDue?: number;
     paidAmount?: number;
+    paymentDate?: string;
     paymentMethod?: string;
     additionalCharges?: number;
     notes?: string;
@@ -50,9 +57,15 @@ export type CreateOrderInput = {
         phone?: string;
         address?: string;
     };
+    customerId?: string;
     items: {
         product: string;
         productName: string;
+        categoryName?: string;
+        unit?: 'Dozen' | 'Cartoon';
+        cartoonSize?: number;
+        inputQty?: number;
+        free?: number;
         quantity: number;
         unitPrice: number;
         totalPrice: number;
@@ -61,7 +74,11 @@ export type CreateOrderInput = {
     discount?: number;
     tax?: number;
     totalAmount: number;
+    previousDue?: number;
+    paidAmount?: number;
+    paymentDate?: string;
     paymentMethod?: string;
+    status?: 'pending' | 'completed' | 'partial';
     notes?: string;
 };
 
@@ -115,6 +132,10 @@ export const ordersApi = baseApi.injectEndpoints({
             transformResponse: (response: ApiResponse<Order>) => response.data,
             providesTags: (_result, _error, id) => [{ type: 'Orders', id }],
         }),
+        getCustomerBalance: builder.query<{ balance: number }, string>({
+            query: (customerId) => `/orders/customer-balance/${customerId}`,
+            transformResponse: (response: ApiResponse<{ balance: number }>) => response.data,
+        }),
     }),
 });
 
@@ -124,5 +145,6 @@ export const {
     useGetOrderByIdQuery,
     useUpdateOrderMutation,
     useDeleteOrderMutation,
+    useGetCustomerBalanceQuery,
 } = ordersApi;
 

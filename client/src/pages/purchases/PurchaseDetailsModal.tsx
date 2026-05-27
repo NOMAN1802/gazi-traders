@@ -5,12 +5,15 @@ import { useReactToPrint } from 'react-to-print';
 import Loader from '@/components/common/Loader';
 import ErrorState from '@/components/common/ErrorState';
 import { useGetPurchaseByIdQuery } from '@/services/purchasesApi';
-import gaziLogo from '@/assets/gaziLogo.svg';
 
 interface PurchaseDetailsModalProps {
     purchaseId: string | null;
     onClose: () => void;
 }
+
+const SHOP_NAME = 'M/S.Gazi Traders';
+const SHOP_SUBTITLE = 'Depot Invoice';
+const SHOP_MOBILE = '01716781486';
 
 const PurchaseDetailsModal = ({ purchaseId, onClose }: PurchaseDetailsModalProps) => {
     const { data: purchase, isLoading, isError } = useGetPurchaseByIdQuery(purchaseId || '', { skip: !purchaseId });
@@ -18,33 +21,19 @@ const PurchaseDetailsModal = ({ purchaseId, onClose }: PurchaseDetailsModalProps
 
     const handlePrint = useReactToPrint({
         contentRef: printRef,
-        documentTitle: `Purchase-${purchase?.purchaseNumber || purchaseId}`,
+        documentTitle: `Invoice-${purchase?.purchaseNumber || purchaseId}`,
         pageStyle: `
-            @page {
-                size: A4;
-                margin: 15mm;
-            }
+            @page { size: A4; margin: 10mm; }
             @media print {
-                body {
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                table {
-                    page-break-inside: auto;
-                }
-                tr {
-                    page-break-inside: avoid;
-                    page-break-after: auto;
-                }
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                table { page-break-inside: auto; }
+                tr { page-break-inside: avoid; page-break-after: auto; }
             }
         `,
     });
 
-    // Handle escape key
     useEffect(() => {
-        const handleEsc = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
+        const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onClose]);
@@ -55,7 +44,7 @@ const PurchaseDetailsModal = ({ purchaseId, onClose }: PurchaseDetailsModalProps
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                 <div className="w-full max-w-4xl rounded-sm bg-white p-8 shadow-2xl h-[90vh] flex items-center justify-center">
-                    <Loader message="Loading purchase details..." />
+                    <Loader message="Loading invoice..." />
                 </div>
             </div>
         );
@@ -66,34 +55,21 @@ const PurchaseDetailsModal = ({ purchaseId, onClose }: PurchaseDetailsModalProps
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                 <div className="w-full max-w-md rounded-sm bg-white p-6 shadow-2xl">
                     <ErrorState description="Purchase not found" />
-                    <button
-                        onClick={onClose}
-                        className="mt-4 w-full rounded-sm bg-brand px-4 py-3 text-sm font-semibold text-white"
-                    >
-                        Close
-                    </button>
+                    <button onClick={onClose} className="mt-4 w-full rounded-sm bg-brand px-4 py-3 text-sm font-semibold text-white">Close</button>
                 </div>
             </div>
         );
     }
 
-    // Debug: Log purchase items to check data
-    console.log('Purchase Data:', purchase);
-    console.log('Purchase Items:', purchase.items);
-
-    const subtotal = purchase.subtotal ?? purchase.totalAmount;
-    const discount = purchase.discount ?? 0;
-    const tax = purchase.tax ?? 0;
-    const additionalCharges = purchase.additionalCharges ?? 0;
-    const grandTotal = purchase.totalAmount;
+    const totalAmount = purchase.totalAmount;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="w-full max-w-4xl rounded-sm bg-white shadow-2xl overflow-hidden flex flex-col h-[90vh]">
+            <div className="w-full max-w-5xl rounded-sm bg-white shadow-2xl overflow-hidden flex flex-col h-[95vh]">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between border-b border-slate-100 p-6 bg-slate-50">
-                    <h3 className="text-xl font-bold text-slate-900">
-                        Purchase Details
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50 shrink-0">
+                    <h3 className="text-base font-bold text-slate-900">
+                        Purchase Invoice
                         <span className="ml-3 text-sm font-normal text-slate-500">#{purchase.purchaseNumber}</span>
                     </h3>
                     <div className="flex items-center gap-3">
@@ -101,171 +77,140 @@ const PurchaseDetailsModal = ({ purchaseId, onClose }: PurchaseDetailsModalProps
                             onClick={() => handlePrint()}
                             className="inline-flex items-center gap-2 rounded-sm bg-brand/10 px-4 py-2 text-sm font-semibold text-brand hover:bg-brand/20 transition-colors"
                         >
-                            <PrinterIcon className="h-5 w-5" />
-                            Print Purchase
+                            <PrinterIcon className="h-4 w-4" />
+                            Print Invoice
                         </button>
-                        <button
-                            onClick={onClose}
-                            className="rounded-sm p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
-                        >
-                            <XMarkIcon className="h-6 w-6" />
+                        <button onClick={onClose} className="rounded-sm p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors">
+                            <XMarkIcon className="h-5 w-5" />
                         </button>
                     </div>
                 </div>
 
-                {/* Modal Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-8 bg-slate-100">
-                    <div className="mx-auto max-w-3xl bg-white shadow-sm p-6" ref={printRef}>
-                        {/* Purchase Content - Purchase From on right below order/date */}
-                        <div className="border-b-2 border-slate-900 pb-3 mb-3">
-                            <div className="flex justify-between items-start gap-4">
-                                <div>
-                                    <img
-                                        src={gaziLogo}
-                                        alt="Gazi Traders Logo"
-                                        className="h-10 w-auto mb-1.5"
-                                    />
-                                    <h1 className="text-2xl font-bold text-slate-900">PURCHASE</h1>
-                                    <p className="text-sm text-slate-600 mt-0.5">গাজী ট্রেডার্স</p>
-                                    <p className="text-[10px] text-slate-500">Inventory Management System</p>
-                                </div>
-                                <div className="text-right shrink-0">
-                                    <p className="text-lg font-bold text-brand">{purchase.purchaseNumber}</p>
-                                    <p className="text-[10px] text-slate-600 mt-0.5">
-                                        Date: {dayjs(purchase.createdAt).format('DD MMM YYYY')}
-                                    </p>
-                                    <div className="mt-2 pt-2 border-t border-slate-200">
-                                        <h2 className="text-[9px] font-bold text-slate-900 uppercase tracking-wide mb-1">
-                                            Purchase From:
-                                        </h2>
-                                        <div className="text-slate-700">
-                                            <p className="font-semibold text-[10px]">{purchase.supplier.name}</p>
-                                            {purchase.supplier.contactPerson && (
-                                                <p className="text-[9px]">Contact: {purchase.supplier.contactPerson}</p>
-                                            )}
-                                            {purchase.supplier.phone && <p className="text-[9px]">Phone: {purchase.supplier.phone}</p>}
-                                            {purchase.supplier.email && <p className="text-[9px]">Email: {purchase.supplier.email}</p>}
-                                            {purchase.supplier.address && <p className="text-[9px]">Address: {purchase.supplier.address}</p>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto bg-slate-100 p-6">
+                    {/* Invoice Container */}
+                    <div
+                        ref={printRef}
+                        className="mx-auto bg-white shadow-sm"
+                        style={{ width: '100%', maxWidth: '780px', fontFamily: 'Arial, sans-serif', fontSize: '11px', padding: '12px 14px' }}
+                    >
+                        {/* ── Invoice Header ── */}
+                        <div style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '6px', marginBottom: '6px' }}>
+                            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{SHOP_NAME}</div>
+                            <div style={{ fontSize: '13px', fontWeight: '600' }}>{SHOP_SUBTITLE}</div>
+                            <div style={{ fontSize: '11px' }}>Mobile:{SHOP_MOBILE}</div>
                         </div>
 
-                        {/* Items Table */}
-                        <table className="w-full mb-4 text-[10px]">
+                        {/* ── Supplier + Date ── */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '6px' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ verticalAlign: 'top', width: '45%' }}>
+                                        <div><strong>Distributer:</strong> {purchase.supplier.name}</div>
+                                        {purchase.supplier.address && (
+                                            <div><strong>Address:</strong> {purchase.supplier.address}</div>
+                                        )}
+                                        {purchase.supplier.phone && (
+                                            <div><strong>Mobile:</strong> {purchase.supplier.phone}</div>
+                                        )}
+                                    </td>
+                                    <td style={{ verticalAlign: 'top', textAlign: 'center', width: '30%' }}>
+                                        {purchase.supplier.contactPerson && (
+                                            <div style={{ fontWeight: '600', fontSize: '12px' }}>{purchase.supplier.contactPerson}</div>
+                                        )}
+                                    </td>
+                                    <td style={{ verticalAlign: 'top', textAlign: 'right', width: '25%' }}>
+                                        <div style={{ fontWeight: '600' }}>DATE {dayjs(purchase.createdAt).format('DD.MM.YY')}</div>
+                                        <div style={{ color: '#555', fontSize: '10px' }}>#{purchase.purchaseNumber}</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        {/* ── Items Table ── */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000' }}>
                             <thead>
-                                <tr className="border-b-2 border-slate-900">
-                                    <th className="text-left py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight">S/N</th>
-                                    <th className="text-left py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight">
-                                        Item
-                                    </th>
-                                    <th className="text-left py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight">
-                                        Supplier
-                                    </th>
-                                    <th className="text-center py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight">
-                                        Qty
-                                    </th>
-                                    <th className="text-right py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight leading-tight">
-                                        Purchase<br />Price
-                                    </th>
-                                    <th className="text-center py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight leading-tight">
-                                        Markup<br />%
-                                    </th>
-                                    <th className="text-right py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight leading-tight">
-                                        Selling<br />Price
-                                    </th>
-                                    <th className="text-right py-1.5 px-1 text-[9px] font-bold text-slate-900 uppercase tracking-tight">
-                                        Total
-                                    </th>
+                                <tr style={{ backgroundColor: '#f0f0f0' }}>
+                                    <th style={th}>SL NO</th>
+                                    <th style={{ ...th, textAlign: 'left', minWidth: '130px' }}>Product Name</th>
+                                    <th style={th}>Category</th>
+                                    <th style={th}>Rate</th>
+                                    <th style={th}>Dozen</th>
+                                    <th style={th}>Cartoon</th>
+                                    <th style={th}>Quantity</th>
+                                    <th style={th}>Amount</th>
+                                    <th style={th}>Free</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {purchase.items.map((item, index) => (
-                                    <tr key={index} className="border-b border-slate-200">
-                                        <td className="py-1.5 px-1 text-[10px] text-slate-800">{index + 1}</td>
-                                        <td className="py-1.5 px-1 text-[10px] text-slate-800">{item.productName}</td>
-                                        <td className="py-1.5 px-1 text-[10px] text-slate-700">{purchase.supplier.name}</td>
-                                        <td className="py-1.5 px-1 text-center text-[10px] text-slate-700">{item.quantity}</td>
-                                        <td className="py-1.5 px-1 text-right text-[10px] text-slate-700">
-                                            ৳{item.unitPrice.toLocaleString()}
-                                        </td>
-                                        <td className="py-1.5 px-1 text-center text-[10px]">
-                                            {item.markupPercent !== undefined && item.markupPercent !== null ? (
-                                                <span className="text-green-700 font-medium">
-                                                    {Number(item.markupPercent).toFixed(2)}%
-                                                </span>
-                                            ) : (
-                                                <span className="text-slate-400">-</span>
-                                            )}
-                                        </td>
-                                        <td className="py-1.5 px-1 text-right text-[10px]">
-                                            {item.sellingPrice !== undefined && item.sellingPrice !== null ? (
-                                                <span className="text-brand font-semibold">
-                                                    ৳{Number(item.sellingPrice).toLocaleString()}
-                                                </span>
-                                            ) : (
-                                                <span className="text-slate-400">-</span>
-                                            )}
-                                        </td>
-                                        <td className="py-1.5 px-1 text-right font-semibold text-[10px] text-slate-900">
-                                            ৳{item.totalPrice.toLocaleString()}
-                                        </td>
+                                {purchase.items.map((item, idx) => {
+                                    const isDozen = item.unit === 'Dozen';
+                                    const isCartoon = item.unit === 'Cartoon';
+                                    const dozenVal = isDozen && item.inputQty ? item.inputQty : '';
+                                    const cartoonVal = isCartoon && item.inputQty ? item.inputQty : '';
+                                    const amount = item.totalPrice;
+                                    const freeVal = item.free && item.free > 0 ? item.free : '';
+
+                                    return (
+                                        <tr key={idx} style={{ borderBottom: '1px solid #ccc' }}>
+                                            <td style={td}>{idx + 1}</td>
+                                            <td style={{ ...td, textAlign: 'left' }}>{item.productName}</td>
+                                            <td style={td}>{item.categoryName || '—'}</td>
+                                            <td style={td}>{item.unitPrice.toFixed(2)}</td>
+                                            <td style={td}>{dozenVal !== '' ? dozenVal : ''}</td>
+                                            <td style={td}>{cartoonVal !== '' ? cartoonVal : ''}</td>
+                                            <td style={td}>{item.quantity.toLocaleString()}</td>
+                                            <td style={{ ...td, textAlign: 'right' }}>{amount > 0 ? amount.toFixed(2) : ''}</td>
+                                            <td style={td}>{freeVal}</td>
+                                        </tr>
+                                    );
+                                })}
+                                {/* Empty rows for visual padding if few items */}
+                                {purchase.items.length < 5 && Array.from({ length: 5 - purchase.items.length }).map((_, i) => (
+                                    <tr key={`empty-${i}`} style={{ borderBottom: '1px solid #eee' }}>
+                                        {Array.from({ length: 9 }).map((__, j) => (
+                                            <td key={j} style={{ ...td, height: '18px' }}></td>
+                                        ))}
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
 
-                        {/* Totals */}
-                        <div className="flex justify-end mb-4">
-                            <div className="w-56">
-                                {/* Subtotal */}
-                                <div className="flex justify-between py-1 text-[10px] text-slate-700 border-b border-slate-200">
-                                    <span className="font-medium">Subtotal:</span>
-                                    <span className="font-semibold">৳{subtotal.toLocaleString()}</span>
-                                </div>
+                        {/* ── Totals ── */}
+                        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0', border: '1px solid #000', borderTop: 'none' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ width: '60%', border: '1px solid #000', padding: '3px 5px' }}></td>
+                                    <td style={{ textAlign: 'right', fontWeight: '700', border: '1px solid #000', padding: '3px 5px', whiteSpace: 'nowrap' }}>Total Taka</td>
+                                    <td style={{ textAlign: 'right', fontWeight: '700', border: '1px solid #000', padding: '3px 8px', minWidth: '80px' }}>{totalAmount.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ border: '1px solid #000', padding: '3px 5px' }}></td>
+                                    <td style={{ textAlign: 'right', border: '1px solid #000', padding: '3px 5px', whiteSpace: 'nowrap' }}>Depo Due</td>
+                                    <td style={{ border: '1px solid #000', padding: '3px 8px' }}></td>
+                                </tr>
+                                <tr>
+                                    <td style={{ border: '1px solid #000', padding: '3px 5px' }}></td>
+                                    <td style={{ textAlign: 'right', fontWeight: '600', border: '1px solid #000', padding: '3px 5px', whiteSpace: 'nowrap' }}>Sub Total</td>
+                                    <td style={{ textAlign: 'right', fontWeight: '600', border: '1px solid #000', padding: '3px 8px' }}>{totalAmount.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ border: '1px solid #000', padding: '3px 5px' }}></td>
+                                    <td style={{ textAlign: 'right', border: '1px solid #000', padding: '3px 5px', whiteSpace: 'nowrap' }}>Adjust</td>
+                                    <td style={{ border: '1px solid #000', padding: '3px 8px' }}></td>
+                                </tr>
+                                <tr>
+                                    <td style={{ border: '1px solid #000', padding: '3px 5px' }}></td>
+                                    <td style={{ textAlign: 'right', border: '1px solid #000', padding: '3px 5px', whiteSpace: 'nowrap' }}>Others</td>
+                                    <td style={{ border: '1px solid #000', padding: '3px 8px' }}></td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-                                {/* Tax */}
-                                {tax > 0 && (
-                                    <div className="flex justify-between py-1 text-[10px] text-slate-700">
-                                        <span>Tax:</span>
-                                        <span className="font-semibold">+৳{tax.toLocaleString()}</span>
-                                    </div>
-                                )}
-
-                                {/* Additional Charges */}
-                                {additionalCharges > 0 && (
-                                    <div className="flex justify-between py-1 text-[10px] text-slate-700">
-                                        <span>Additional Charges:</span>
-                                        <span className="font-semibold">+৳{additionalCharges.toLocaleString()}</span>
-                                    </div>
-                                )}
-
-                                {/* Discount */}
-                                {discount > 0 && (
-                                    <div className="flex justify-between py-1 text-[10px] text-slate-700">
-                                        <span>Discount:</span>
-                                        <span className="font-semibold text-orange-600">
-                                            -৳{discount.toLocaleString()}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Grand Total */}
-                                <div className="flex justify-between py-1.5 border-t-2 border-slate-900 text-[11px] font-bold">
-                                    <span>GRAND TOTAL:</span>
-                                    <span className="text-brand">৳{grandTotal.toLocaleString()}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Notes */}
+                        {/* ── Notes ── */}
                         {purchase.notes && (
-                            <div className="mt-4 pt-3 border-t border-slate-200">
-                                <h3 className="text-[9px] font-bold text-slate-900 uppercase tracking-wide mb-1">
-                                    Notes:
-                                </h3>
-                                <p className="text-[10px] text-slate-700 whitespace-pre-wrap">{purchase.notes}</p>
+                            <div style={{ marginTop: '8px', fontSize: '10px', color: '#555' }}>
+                                <strong>Notes:</strong> {purchase.notes}
                             </div>
                         )}
                     </div>
@@ -273,6 +218,23 @@ const PurchaseDetailsModal = ({ purchaseId, onClose }: PurchaseDetailsModalProps
             </div>
         </div>
     );
+};
+
+const th: React.CSSProperties = {
+    border: '1px solid #000',
+    padding: '3px 4px',
+    textAlign: 'center',
+    fontWeight: '700',
+    fontSize: '10px',
+    whiteSpace: 'nowrap',
+};
+
+const td: React.CSSProperties = {
+    border: '1px solid #ccc',
+    padding: '2px 4px',
+    textAlign: 'center',
+    fontSize: '10px',
+    whiteSpace: 'nowrap',
 };
 
 export default PurchaseDetailsModal;

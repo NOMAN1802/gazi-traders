@@ -104,6 +104,17 @@ const getFinancialSummary = catchAsync(async (req, res) => {
   });
 });
 
+const getDailyStock = catchAsync(async (req, res) => {
+  const date = (req.query.date as string) || new Date().toISOString().slice(0, 10);
+  const result = await ReportsServices.getDailyStock(date);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Daily stock retrieved successfully',
+    data: result,
+  });
+});
+
 export const ReportsControllers = {
   getStockReport,
   getOrderReport,
@@ -112,4 +123,5 @@ export const ReportsControllers = {
   getExpenseReport,
   getRevenueReport,
   getFinancialSummary,
+  getDailyStock,
 };

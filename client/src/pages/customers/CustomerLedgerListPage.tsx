@@ -155,8 +155,8 @@ const CustomerLedgerListPage = () => {
         <div className="space-y-8">
             <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.35em] text-brand">CRM Layer</p>
-                <h1 className="mt-2 text-3xl font-bold text-slate-900">Customer Ledger</h1>
-                <p className="text-sm text-slate-500">Monitor customer balances, activity and credit behavior.</p>
+                <h1 className="mt-2 text-3xl font-bold text-slate-900">Distributor Ledger</h1>
+                <p className="text-sm text-slate-500">Monitor distributor balances, activity and credit behavior.</p>
             </div>
 
             {/* Search and Date Filter */}
@@ -196,9 +196,8 @@ const CustomerLedgerListPage = () => {
                         <thead className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                             <tr>
                                 <th className="py-3 pr-4">S/N</th>
-                                <th className="py-3 pr-4">Customer</th>
+                                <th className="py-3 pr-4">Distributor</th>
                                 <th className="py-3 pr-4">Phone</th>
-                                <th className="py-3 pr-4">Country</th>
                                 <th className="py-3 pr-4">Balance</th>
                                 <th className="py-3 pr-4">Total Invoice</th>
                                 <th className="py-3 pr-4">Created On</th>
@@ -214,7 +213,6 @@ const CustomerLedgerListPage = () => {
                                         <p className="text-xs text-slate-400">Priority</p>
                                     </td>
                                     <td className="py-4 pr-4">{customer.phone ?? '-'}</td>
-                                    <td className="py-4 pr-4">Bangladesh</td>
                                     <td className="py-4 pr-4 font-semibold text-slate-900">
                                         ৳{Math.max(0, customer.balance).toLocaleString()}
                                     </td>

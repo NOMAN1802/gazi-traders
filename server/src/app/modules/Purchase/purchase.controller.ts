@@ -59,11 +59,23 @@ const deletePurchase = catchAsync(async (req, res) => {
   });
 });
 
+const getSupplierBalance = catchAsync(async (req, res) => {
+  const result = await PurchaseServices.getSupplierBalance(req.params.supplierId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Supplier balance retrieved successfully",
+    data: result,
+  });
+});
+
 export const PurchaseControllers = {
   createPurchase,
   getAllPurchases,
   getPurchaseById,
   updatePurchase,
   deletePurchase,
+  getSupplierBalance,
 };
 

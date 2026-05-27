@@ -21,6 +21,12 @@ router.get(
 );
 
 router.get(
+  "/customer-balance/:customerId",
+  auth(USER_ROLE.admin, USER_ROLE.manager, USER_ROLE.staff),
+  OrderControllers.getCustomerBalance
+);
+
+router.get(
   "/:id",
   auth(USER_ROLE.admin, USER_ROLE.manager, USER_ROLE.staff),
   OrderControllers.getOrderById

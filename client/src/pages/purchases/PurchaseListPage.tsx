@@ -635,7 +635,7 @@ const PurchaseListPage = () => {
                                     <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-sm border border-slate-200 bg-white shadow-xl">
                                         <div className="p-3 border-b border-slate-100">
                                             <div className="flex items-center justify-between">
-                                                <h3 className="text-sm font-semibold text-slate-900">Filter by Supplier</h3>
+                                                <h3 className="text-sm font-semibold text-slate-900">Filter by Factory</h3>
                                                 {selectedSupplier && (
                                                     <button
                                                         onClick={handleClearFilter}
@@ -654,7 +654,7 @@ const PurchaseListPage = () => {
                                                     : 'text-slate-700 hover:bg-slate-50'
                                                     }`}
                                             >
-                                                All Suppliers
+                                                All Factories
                                             </button>
                                             {suppliersData?.suppliers && suppliersData.suppliers.length > 0 ? (
                                                 suppliersData.suppliers.map((supplier) => (

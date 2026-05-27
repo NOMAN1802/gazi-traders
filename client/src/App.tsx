@@ -4,12 +4,13 @@ import ShellLayout from '@/components/layout/ShellLayout';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import ProductsPage from '@/pages/products/ProductsPage';
 import ProductFormPage from '@/pages/products/ProductFormPage';
-import PurchaseProductPage from '@/pages/products/PurchaseProductPage';
-import PurchaseListPage from '@/pages/purchases/PurchaseListPage';
-import EditPurchasePage from '@/pages/purchases/EditPurchasePage';
 import CategoriesPage from '@/pages/categories/CategoriesPage';
 import UnitsPage from '@/pages/units/UnitsPage';
+import StockIntakeListPage from '@/pages/stock-intake/StockIntakeListPage';
+import AddStockPage from '@/pages/stock-intake/AddStockPage';
+import StockIntakeDetailPage from '@/pages/stock-intake/StockIntakeDetailPage';
 import SuppliersPage from '@/pages/suppliers/SuppliersPage';
+import DailyStockPage from '@/pages/reports/DailyStockPage';
 import InvoicesPage from '@/pages/invoices/InvoicesPage';
 import CreateSalePage from '@/pages/invoices/CreateSalePage';
 import EditOrderPage from '@/pages/invoices/EditOrderPage';
@@ -77,9 +78,10 @@ function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="products/new" element={<ProductFormPage />} />
           <Route path="products/edit/:id" element={<ProductFormPage />} />
-          <Route path="products/purchase" element={<PurchaseProductPage />} />
-          <Route path="purchases" element={<PurchaseListPage />} />
-          <Route path="purchases/:id/edit" element={<EditPurchasePage />} />
+          <Route path="stock-intake" element={<StockIntakeListPage />} />
+          <Route path="stock-intake/add" element={<AddStockPage />} />
+          <Route path="stock-intake/:id" element={<StockIntakeDetailPage />} />
+          <Route path="daily-stock" element={<DailyStockPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="units" element={<UnitsPage />} />
           <Route path="suppliers" element={<SuppliersPage />} />

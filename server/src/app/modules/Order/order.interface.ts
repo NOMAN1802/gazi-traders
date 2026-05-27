@@ -7,6 +7,10 @@ export type TOrderItem = {
   productName: string;
   categoryId?: Types.ObjectId;
   categoryName?: string;
+  unit?: 'Dozen' | 'Cartoon';
+  cartoonSize?: number;
+  inputQty?: number;
+  free?: number;
   damageId?: Types.ObjectId;
   returnId?: Types.ObjectId;
   damageProducts: number;
@@ -31,7 +35,10 @@ export type TOrder = {
   tax?: number;
   additionalCharges?: number;
   totalAmount: number;
+  previousDue?: number;
   paidAmount?: number;
+  paymentDate?: Date;
+  customerId?: Types.ObjectId;
   status: TOrderStatus;
   paymentMethod?: string;
   notes?: string;

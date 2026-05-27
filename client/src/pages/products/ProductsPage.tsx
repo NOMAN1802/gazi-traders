@@ -270,9 +270,10 @@ const ProductsPage = () => {
                                 <th className="py-2.5 pr-4">Product</th>
                                 <th className="py-2.5 pr-4">Category</th>
                                 <th className="py-2.5 pr-4">Unit</th>
-                                <th className="py-2.5 pr-4">Quantity</th>
-                                <th className="py-2.5 pr-4">Selling Price</th>
-                                <th className="py-2.5 pr-4">Purchase Price</th>
+                                <th className="py-2.5 pr-4">Ctn Size</th>
+                                <th className="py-2.5 pr-4">Rate/pc</th>
+                                <th className="py-2.5 pr-4">Stock (pcs)</th>
+                                <th className="py-2.5 pr-4">Free</th>
                                 <th className="py-2.5">Actions</th>
                             </tr>
                         </thead>
@@ -287,10 +288,17 @@ const ProductsPage = () => {
                                             <p className="text-[10px] text-slate-400">#{product._id.slice(-5)}</p>
                                         </td>
                                         <td className="py-2.5 pr-4 text-slate-700">{product.categoryName ?? 'Unassigned'}</td>
-                                        <td className="py-2.5 pr-4 capitalize">{product.unit}</td>
-                                        <td className="py-2.5 pr-4 font-semibold text-slate-900">{product.stockQuantity}</td>
+                                        <td className="py-2.5 pr-4">
+                                            <span className={`inline-flex items-center rounded-sm px-2 py-0.5 text-[10px] font-semibold ${product.unit === 'Dozen' ? 'bg-blue-50 text-blue-700' : 'bg-orange-50 text-orange-700'}`}>
+                                                {product.unit}
+                                            </span>
+                                        </td>
+                                        <td className="py-2.5 pr-4 text-slate-600">
+                                            {product.unit === 'Cartoon' ? (product.cartoonSize ?? '—') : '—'}
+                                        </td>
                                         <td className="py-2.5 pr-4 font-semibold text-slate-900">৳{(product.sellingPrice ?? 0).toLocaleString()}</td>
-                                        <td className="py-2.5 pr-4">৳{(product.purchasePrice ?? 0).toLocaleString()}</td>
+                                        <td className="py-2.5 pr-4 font-semibold text-slate-900">{(product.stockQuantity ?? 0).toLocaleString()}</td>
+                                        <td className="py-2.5 pr-4 text-slate-600">{product.free ? product.free : '—'}</td>
                                         <td className="py-2.5">
                                             <div className="flex items-center gap-2">
                                                 <button

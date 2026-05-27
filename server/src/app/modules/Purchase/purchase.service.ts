@@ -344,11 +344,21 @@ const deletePurchase = async (id: string) => {
   }
 };
 
+const getSupplierBalance = async (supplierId: string) => {
+  const purchases = await Purchase.find({ 'supplier._id': supplierId, isDeleted: false });
+  const balance = purchases.reduce(
+    (sum, p) => sum + p.totalAmount - (p.paidAmount ?? 0),
+    0
+  );
+  return { balance };
+};
+
 export const PurchaseServices = {
   createPurchase,
   getAllPurchases,
   getPurchaseById,
   updatePurchase,
   deletePurchase,
+  getSupplierBalance,
 };
 

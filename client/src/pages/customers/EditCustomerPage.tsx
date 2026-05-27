@@ -6,7 +6,7 @@ import { useGetCustomerQuery, useUpdateCustomerMutation } from '@/services/custo
 import Loader from '@/components/common/Loader';
 import ErrorState from '@/components/common/ErrorState';
 
-type Customer = { _id: string; name: string; phone?: string; email?: string; address?: string; status: 'active' | 'inactive' };
+type Customer = { _id: string; name: string; phone?: string; address?: string; status: 'active' | 'inactive' };
 
 const EditCustomerPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -25,7 +25,6 @@ const EditCustomerForm = ({ customer, id }: { customer: Customer; id: string }) 
     const [formData, setFormData] = useState({
         name: customer.name,
         phone: customer.phone ?? '',
-        email: customer.email ?? '',
         address: customer.address ?? '',
         status: customer.status,
     });
@@ -35,9 +34,6 @@ const EditCustomerForm = ({ customer, id }: { customer: Customer; id: string }) 
     const validate = () => {
         const newErrors: Partial<typeof formData> = {};
         if (!formData.name.trim()) newErrors.name = 'Name is required';
-        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Enter a valid email address';
-        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -60,15 +56,14 @@ const EditCustomerForm = ({ customer, id }: { customer: Customer; id: string }) 
                 data: {
                     name: formData.name.trim(),
                     phone: formData.phone.trim() || undefined,
-                    email: formData.email.trim() || undefined,
                     address: formData.address.trim() || undefined,
                     status: formData.status,
                 },
             }).unwrap();
-            toast.success('Customer updated successfully');
+            toast.success('Distributor updated successfully');
             navigate('/customers');
         } catch {
-            toast.error('Failed to update customer');
+            toast.error('Failed to update distributor');
         }
     };
 
@@ -84,19 +79,19 @@ const EditCustomerForm = ({ customer, id }: { customer: Customer; id: string }) 
                 </button>
                 <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.35em] text-brand">CRM Layer</p>
-                    <h1 className="mt-1 text-3xl font-bold text-slate-900">Edit Customer</h1>
-                    <p className="text-sm text-slate-500">Update customer information.</p>
+                    <h1 className="mt-1 text-3xl font-bold text-slate-900">Edit Distributor</h1>
+                    <p className="text-sm text-slate-500">Update distributor information.</p>
                 </div>
             </div>
 
             {/* Form */}
             <div className="rounded-sm border border-white/70 bg-white/90 p-4 sm:p-6 lg:p-8 shadow-card">
                 <form onSubmit={handleSubmit} className="space-y-6 w-full">
-                    {/* Row 1: Name + Phone */}
+                    {/* Row 1: Distributor Name + Mobile Number */}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                         <div>
                             <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                                Full Name <span className="text-danger">*</span>
+                                Distributor Name <span className="text-danger">*</span>
                             </label>
                             <input
                                 name="name"
@@ -113,7 +108,7 @@ const EditCustomerForm = ({ customer, id }: { customer: Customer; id: string }) 
                         </div>
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Phone</label>
+                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Mobile Number</label>
                             <input
                                 name="phone"
                                 value={formData.phone}
@@ -124,25 +119,8 @@ const EditCustomerForm = ({ customer, id }: { customer: Customer; id: string }) 
                         </div>
                     </div>
 
-                    {/* Row 2: Email + Status */}
+                    {/* Row 2: Status */}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                        <div>
-                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Email</label>
-                            <input
-                                name="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="e.g. customer@example.com"
-                                className={`w-full rounded-sm border px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 transition ${
-                                    errors.email
-                                        ? 'border-danger bg-danger/5 focus:ring-danger/20'
-                                        : 'border-slate-200 bg-white focus:border-brand focus:ring-brand/20'
-                                }`}
-                            />
-                            {errors.email && <p className="mt-1 text-xs text-danger">{errors.email}</p>}
-                        </div>
-
                         <div>
                             <label className="mb-1.5 block text-sm font-semibold text-slate-700">Status</label>
                             <select

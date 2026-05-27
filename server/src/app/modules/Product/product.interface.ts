@@ -7,10 +7,12 @@ export type TProduct = {
   category?: Types.ObjectId;
   categoryId?: string;
   categoryName?: string;
-  unit: string;
-  purchasePrice: number;
+  unit: 'Dozen' | 'Cartoon';
+  cartoonSize?: number;
+  purchasePrice?: number;
   sellingPrice: number;
   stockQuantity: number;
+  free?: number;
   minStockLevel?: number;
   description?: string;
   supplierId?: string;

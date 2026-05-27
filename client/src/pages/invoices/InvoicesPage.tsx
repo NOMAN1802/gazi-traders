@@ -314,7 +314,7 @@ const InvoicesPage = () => {
                                     <tr>
                                         <th style={{ width: '10%' }}>Date</th>
                                         <th style={{ width: '12%' }}>Order #</th>
-                                        <th style={{ width: '15%' }}>Customer</th>
+                                        <th style={{ width: '15%' }}>Distributor</th>
                                         <th style={{ width: '22%' }}>Product</th>
                                         <th className="text-center" style={{ width: '8%' }}>Qty</th>
                                         <th className="text-right" style={{ width: '10%' }}>Unit Price</th>
@@ -494,7 +494,7 @@ const InvoicesPage = () => {
                                 <div className="absolute right-0 top-full z-10 mt-2 w-48 rounded-sm border border-slate-100 bg-white p-2 shadow-lg ring-1 ring-black/5">
                                     {Object.entries({
                                         orderId: 'Order ID',
-                                        customer: 'Customer',
+                                        customer: 'Distributor',
                                         date: 'Created On',
                                         amount: 'Amount',
                                         items: 'Items',
@@ -532,7 +532,7 @@ const InvoicesPage = () => {
                             <tr>
                                 <th className="py-2.5 pr-4">S/N</th>
                                 {visibleColumns.orderId && <th className="py-2.5 pr-4">Order ID</th>}
-                                {visibleColumns.customer && <th className="py-2.5 pr-4">Customer</th>}
+                                {visibleColumns.customer && <th className="py-2.5 pr-4">Distributor</th>}
                                 {visibleColumns.date && <th className="py-2.5 pr-4">Created On</th>}
                                 {visibleColumns.amount && <th className="py-2.5 pr-4">Amount</th>}
                                 {visibleColumns.items && <th className="py-2.5 pr-4">Items</th>}

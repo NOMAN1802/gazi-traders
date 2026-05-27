@@ -5,7 +5,6 @@ const CustomerSchema = new Schema<TCustomer>(
     {
         name: { type: String, required: true, trim: true },
         phone: { type: String, trim: true },
-        email: { type: String, trim: true, lowercase: true },
         address: { type: String, trim: true },
         status: { type: String, enum: ['active', 'inactive'], default: 'active' },
         isDeleted: { type: Boolean, default: false },

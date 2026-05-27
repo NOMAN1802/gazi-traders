@@ -4,9 +4,8 @@ import type { ApiResponse } from './types';
 export type Supplier = {
     _id: string;
     name: string;
-    contactPerson: string;
-    phone: string;
-    address: string;
+    phone?: string;
+    address?: string;
     status: 'active' | 'inactive';
     createdAt: string;
     updatedAt: string;
@@ -14,9 +13,8 @@ export type Supplier = {
 
 export type CreateSupplierInput = {
     name: string;
-    contactPerson: string;
-    phone: string;
-    address: string;
+    phone?: string;
+    address?: string;
     status?: 'active' | 'inactive';
 };
 

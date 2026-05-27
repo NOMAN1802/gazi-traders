@@ -3,9 +3,8 @@ import { Types } from 'mongoose';
 export type TSupplier = {
     _id?: Types.ObjectId;
     name: string;
-    contactPerson: string;
-    phone: string;
-    address: string;
+    phone?: string;
+    address?: string;
     status: 'active' | 'inactive';
     isDeleted?: boolean;
     createdBy?: Types.ObjectId;

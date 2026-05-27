@@ -340,10 +340,20 @@ const deleteOrder = async (id: string) => {
   }
 };
 
+const getCustomerBalance = async (customerId: string) => {
+  const orders = await Order.find({ customerId, isDeleted: false });
+  const balance = orders.reduce(
+    (sum, o) => sum + o.totalAmount - (o.paidAmount ?? 0),
+    0
+  );
+  return { balance };
+};
+
 export const OrderServices = {
   createOrder,
   getAllOrders,
   getOrderById,
   updateOrder,
   deleteOrder,
+  getCustomerBalance,
 };

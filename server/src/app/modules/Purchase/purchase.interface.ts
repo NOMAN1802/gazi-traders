@@ -7,9 +7,13 @@ export type TPurchaseItem = {
   productName: string;
   categoryId?: Types.ObjectId;
   categoryName?: string;
+  unit?: 'Dozen' | 'Cartoon';
+  cartoonSize?: number;
+  inputQty?: number;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  free?: number;
   markupPercent?: number;
   sellingPrice?: number;
   minStockLevel?: number;
@@ -32,7 +36,9 @@ export type TPurchase = {
   tax?: number;
   additionalCharges?: number;
   totalAmount: number;
+  previousDue?: number;
   paidAmount?: number;
+  paymentDate?: Date;
   status: TPurchaseStatus;
   paymentMethod?: string;
   notes?: string;

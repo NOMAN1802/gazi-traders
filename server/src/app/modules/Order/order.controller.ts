@@ -59,10 +59,22 @@ const deleteOrder = catchAsync(async (req, res) => {
   });
 });
 
+const getCustomerBalance = catchAsync(async (req, res) => {
+  const result = await OrderServices.getCustomerBalance(req.params.customerId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Customer balance retrieved successfully",
+    data: result,
+  });
+});
+
 export const OrderControllers = {
   createOrder,
   getAllOrders,
   getOrderById,
   updateOrder,
   deleteOrder,
+  getCustomerBalance,
 };

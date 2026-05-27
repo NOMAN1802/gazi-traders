@@ -21,6 +21,12 @@ router.get(
 );
 
 router.get(
+  "/supplier-balance/:supplierId",
+  auth(USER_ROLE.admin, USER_ROLE.manager, USER_ROLE.staff),
+  PurchaseControllers.getSupplierBalance
+);
+
+router.get(
   "/:id",
   auth(USER_ROLE.admin, USER_ROLE.manager, USER_ROLE.staff),
   PurchaseControllers.getPurchaseById

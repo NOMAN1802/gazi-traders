@@ -7,10 +7,12 @@ export type Product = {
     name: string;
     sku?: string;
     categoryName?: string;
-    unit: string;
+    unit: 'Dozen' | 'Cartoon';
+    cartoonSize?: number;
     sellingPrice: number;
-    purchasePrice: number;
+    purchasePrice?: number;
     stockQuantity: number;
+    free?: number;
     minStockLevel?: number;
     description?: string;
     supplierId?: string;
@@ -20,10 +22,12 @@ export type CreateProductInput = {
     name: string;
     sku?: string;
     categoryName?: string;
-    unit: string;
-    purchasePrice: number;
+    unit: 'Dozen' | 'Cartoon';
+    cartoonSize?: number;
+    purchasePrice?: number;
     sellingPrice: number;
     stockQuantity: number;
+    free?: number;
     minStockLevel?: number;
     description?: string;
     supplierId?: string;
@@ -38,18 +42,13 @@ export type ProductListResponse = {
 
 export const productsApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
-        getProducts: builder.query<ProductListResponse, { page?: number; search?: string; limit?: number; categoryId?: string }>({
-            query: ({ page = 1, search, limit = 30, categoryId } = {}) => {
-                const params: Record<string, any> = {
-                    page,
-                    limit,
-                };
+        getProducts: builder.query<ProductListResponse, { page?: number; search?: string; limit?: number; categoryId?: string; supplierId?: string }>({
+            query: ({ page = 1, search, limit = 30, categoryId, supplierId } = {}) => {
+                const params: Record<string, any> = { page, limit };
                 if (search) params.search = search;
                 if (categoryId) params.categoryId = categoryId;
-                return {
-                    url: '/products',
-                    params,
-                };
+                if (supplierId) params.supplierId = supplierId;
+                return { url: '/products', params };
             },
             transformResponse: (response: ApiResponse<ProductListResponse>) => response.data,
             providesTags: (result) =>

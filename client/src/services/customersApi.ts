@@ -5,7 +5,6 @@ export type Customer = {
     _id: string;
     name: string;
     phone?: string;
-    email?: string;
     address?: string;
     status: 'active' | 'inactive';
     createdAt: string;
@@ -15,7 +14,6 @@ export type Customer = {
 export type CreateCustomerInput = {
     name: string;
     phone?: string;
-    email?: string;
     address?: string;
     status?: 'active' | 'inactive';
 };

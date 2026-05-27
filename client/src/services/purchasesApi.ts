@@ -7,9 +7,13 @@ export type PurchaseItem = {
     productName: string;
     categoryId?: string;
     categoryName?: string;
+    unit?: 'Dozen' | 'Cartoon';
+    cartoonSize?: number;
+    inputQty?: number;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    free?: number;
     markupPercent?: number;
     sellingPrice?: number;
 };
@@ -31,7 +35,9 @@ export type Purchase = {
     discount?: number;
     tax?: number;
     additionalCharges?: number;
+    previousDue?: number;
     paidAmount?: number;
+    paymentDate?: string;
     paymentMethod?: string;
     notes?: string;
     createdAt: string;
@@ -59,9 +65,14 @@ export type CreatePurchaseInput = {
     items: {
         product: string;
         productName: string;
+        categoryName?: string;
+        unit?: 'Dozen' | 'Cartoon';
+        cartoonSize?: number;
+        inputQty?: number;
         quantity: number;
         unitPrice: number;
         totalPrice: number;
+        free?: number;
         markupPercent?: number;
         sellingPrice?: number;
     }[];
@@ -70,7 +81,11 @@ export type CreatePurchaseInput = {
     tax?: number;
     additionalCharges?: number;
     totalAmount: number;
+    previousDue?: number;
+    paidAmount?: number;
+    paymentDate?: string;
     paymentMethod?: string;
+    status?: 'pending' | 'completed' | 'partial';
     notes?: string;
 };
 
@@ -124,6 +139,10 @@ export const purchasesApi = baseApi.injectEndpoints({
             transformResponse: (response: ApiResponse<Purchase>) => response.data,
             providesTags: (_result, _error, id) => [{ type: 'Purchases', id }],
         }),
+        getSupplierBalance: builder.query<{ balance: number }, string>({
+            query: (supplierId) => `/purchases/supplier-balance/${supplierId}`,
+            transformResponse: (response: ApiResponse<{ balance: number }>) => response.data,
+        }),
     }),
 });
 
@@ -133,5 +152,6 @@ export const {
     useGetPurchaseByIdQuery,
     useUpdatePurchaseMutation,
     useDeletePurchaseMutation,
+    useGetSupplierBalanceQuery,
 } = purchasesApi;
 

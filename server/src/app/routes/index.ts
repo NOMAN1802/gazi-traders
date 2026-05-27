@@ -16,6 +16,7 @@ import { purchaseRoutes } from '../modules/Purchase/purchase.route';
 import { pendingProductRoutes } from '../modules/PendingProduct/pending-product.route';
 import { customerRoutes } from '../modules/Customer/customer.route';
 import { dueBillRoutes } from '../modules/DueBill/due-bill.route';
+import { stockIntakeRoutes } from '../modules/StockIntake/stock-intake.route';
 
 const router = express.Router();
 
@@ -87,6 +88,10 @@ const moduleRoutes = [
   {
     path: '/due-bills',
     route: dueBillRoutes,
+  },
+  {
+    path: '/stock-intakes',
+    route: stockIntakeRoutes,
   },
 ];
 

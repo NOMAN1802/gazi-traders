@@ -8,19 +8,12 @@ const SupplierSchema = new Schema<TSupplier>(
             required: true,
             trim: true,
         },
-        contactPerson: {
-            type: String,
-            required: true,
-            trim: true,
-        },
         phone: {
             type: String,
-            required: true,
             trim: true,
         },
         address: {
             type: String,
-            required: true,
             trim: true,
         },
         status: {

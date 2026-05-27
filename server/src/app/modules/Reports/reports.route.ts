@@ -47,4 +47,10 @@ router.get(
   ReportsControllers.getFinancialSummary
 );
 
+router.get(
+  "/daily-stock",
+  auth(USER_ROLE.admin, USER_ROLE.manager, USER_ROLE.staff),
+  ReportsControllers.getDailyStock
+);
+
 export const reportsRoutes = router;

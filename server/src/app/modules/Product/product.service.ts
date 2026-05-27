@@ -8,33 +8,32 @@ import { Product } from './product.model';
 import { Category } from '../Category/category.model';
 import { Expense } from '../Expense/expense.model';
 
-const findExistingProduct = async (name: string, sku?: string, session?: mongoose.ClientSession): Promise<TProduct | null> => {
-  const filter: Record<string, unknown> = {
+const findExistingProduct = async (
+  name: string,
+  categoryId?: string,
+  sku?: string,
+  session?: mongoose.ClientSession
+): Promise<TProduct | null> => {
+  // Match by name + category combination (same name in different category = different product)
+  const nameAndCategoryFilter: Record<string, unknown> = {
     name: name.trim(),
-    isDeleted: false
+    isDeleted: false,
   };
+  if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) {
+    nameAndCategoryFilter.category = new mongoose.Types.ObjectId(categoryId);
+  } else {
+    // No category provided — only match products that also have no category
+    nameAndCategoryFilter.category = { $exists: false };
+  }
 
-  // If SKU is provided, also check by SKU
+  const conditions: Record<string, unknown>[] = [nameAndCategoryFilter];
+
   if (sku) {
-    const query = Product.findOne({
-      $or: [
-        { name: name.trim(), isDeleted: false },
-        { sku: sku.trim(), isDeleted: false }
-      ]
-    });
-
-    if (session) {
-      query.session(session);
-    }
-
-    return await query;
+    conditions.push({ sku: sku.trim(), isDeleted: false });
   }
 
-  const query = Product.findOne(filter);
-  if (session) {
-    query.session(session);
-  }
-
+  const query = Product.findOne(conditions.length > 1 ? { $or: conditions } : nameAndCategoryFilter);
+  if (session) query.session(session);
   return await query;
 };
 
@@ -66,8 +65,8 @@ const createProduct = async (payload: TProduct): Promise<TProduct> => {
     const incomingQuantity = payload.stockQuantity ?? 0;
     const incomingPurchasePrice = payload.purchasePrice ?? 0;
 
-    // Check if product already exists by name or SKU
-    const existingProduct = await findExistingProduct(payload.name, payload.sku, session);
+    // Check if product already exists by name + category combination (or SKU)
+    const existingProduct = await findExistingProduct(payload.name, payload.categoryId, payload.sku, session);
 
     let product: TProduct;
     let isNewProduct = false;
@@ -204,6 +203,15 @@ const getProducts = async (
     }
   }
 
+  // Build supplier filter
+  let supplierFilter: any = null;
+  if (query.supplierId) {
+    const supplierId = query.supplierId as string;
+    if (mongoose.Types.ObjectId.isValid(supplierId)) {
+      supplierFilter = { supplierId: new mongoose.Types.ObjectId(supplierId) };
+    }
+  }
+
   // Build search filter
   let searchFilter: any = null;
   if (query.search) {
@@ -220,18 +228,12 @@ const getProducts = async (
   // Combine filters properly
   const finalFilter: any = { ...baseFilter };
 
-  // If we have both category and search filters, use $and to combine them
-  if (categoryFilter && searchFilter) {
-    finalFilter.$and = [
-      categoryFilter,
-      searchFilter
-    ];
-  } else if (categoryFilter) {
-    // Only category filter
-    Object.assign(finalFilter, categoryFilter);
-  } else if (searchFilter) {
-    // Only search filter
-    Object.assign(finalFilter, searchFilter);
+  // Combine all active filters using $and
+  const activeFilters = [categoryFilter, supplierFilter, searchFilter].filter(Boolean);
+  if (activeFilters.length > 1) {
+    finalFilter.$and = activeFilters;
+  } else if (activeFilters.length === 1) {
+    Object.assign(finalFilter, activeFilters[0]);
   }
 
   // Calculate pagination

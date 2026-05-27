@@ -66,6 +66,25 @@ export type RevenueReport = {
 
 export type DateRangeParams = { startDate?: string; endDate?: string } | undefined;
 
+export type DailyStockProduct = {
+    _id: string;
+    name: string;
+    cartoonSize: number | null;
+    unit: string;
+    previousStock: number;
+    stockIn: number;
+    total: number;
+    deliveries: Record<string, number>;
+    totalDelivery: number;
+    balance: number;
+};
+
+export type DailyStockReport = {
+    date: string;
+    customers: string[];
+    products: DailyStockProduct[];
+};
+
 export const reportsApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
         getFinancialSummary: builder.query<FinancialSummary, DateRangeParams>({
@@ -109,6 +128,12 @@ export const reportsApi = baseApi.injectEndpoints({
             transformResponse: (response: ApiResponse<any>) => response.data,
             providesTags: ['Reports'],
         }),
+
+        getDailyStock: builder.query<DailyStockReport, { date: string }>({
+            query: ({ date }) => ({ url: '/reports/daily-stock', params: { date } }),
+            transformResponse: (response: ApiResponse<DailyStockReport>) => response.data,
+            providesTags: ['Reports', 'Products', 'Orders', 'StockIntakes'],
+        }),
     }),
 });
 
@@ -118,5 +143,6 @@ export const {
     useGetOrderReportQuery,
     useGetRevenueReportQuery,
     useGetExpenseReportQuery,
+    useGetDailyStockQuery,
 } = reportsApi;
 
