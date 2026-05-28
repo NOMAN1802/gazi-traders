@@ -26,7 +26,7 @@ export type Order = {
         address?: string;
     };
     customerId?: string;
-    status: 'pending' | 'completed' | 'partial';
+    status: 'pending' | 'completed' | 'partial' | 'depo_due';
     totalAmount: number;
     subtotal?: number;
     discount?: number;

@@ -318,7 +318,7 @@ const Sidebar = ({ open, onClose }: SidebarProps) => {
         <>
             {/* Desktop Sidebar */}
             <div
-                className={`hidden lg:flex lg:flex-col lg:border-r lg:border-slate-200/60 lg:bg-white/80 lg:backdrop-blur-xl lg:shadow-2xl lg:shadow-slate-900/5 lg:transition-all lg:duration-300 ${collapsed ? 'lg:w-20' : 'lg:w-72'
+                className={`hidden lg:flex lg:flex-col lg:border-r lg:border-slate-200/60 lg:bg-white/80 lg:backdrop-blur-xl lg:shadow-2xl lg:shadow-slate-900/5 lg:transition-all lg:duration-300 ${collapsed ? 'lg:w-20' : 'lg:w-[292px]'
                     }`}
             >
                 <div className="flex flex-col h-full">

@@ -205,14 +205,11 @@ const InvoicesPage = () => {
         const grandTotal = order.totalAmount;
         const currentPaidAmount = order.paidAmount || 0;
         const newPaidAmount = currentPaidAmount + additionalAmount;
+        const newBalance = grandTotal - newPaidAmount;
 
-        if (newPaidAmount > grandTotal) {
-            alert(`Payment amount exceeds the grand total of ৳${grandTotal.toLocaleString()}. Maximum additional payment: ৳${(grandTotal - currentPaidAmount).toLocaleString()}`);
-            return;
-        }
-
-        const newDueAmount = grandTotal - newPaidAmount;
-        const newStatus: 'partial' | 'completed' = newDueAmount <= 0 ? 'completed' : 'partial';
+        // depo_due when distributor overpays; completed when exact; partial when still owing
+        const newStatus: 'partial' | 'completed' | 'depo_due' =
+            newBalance < 0 ? 'depo_due' : newBalance === 0 ? 'completed' : 'partial';
 
         try {
             await updateOrder({ id: selectedOrderId, data: { status: newStatus, paidAmount: newPaidAmount } }).unwrap();
@@ -243,8 +240,8 @@ const InvoicesPage = () => {
         }
     };
 
-    const isOrderFullyProtected = (order: Order): boolean => order.status === 'completed';
-    const isDeleteDisabled = (order: Order): boolean => order.status === 'completed' || order.status === 'partial';
+    const isOrderFullyProtected = (order: Order): boolean => order.status === 'completed' || order.status === 'depo_due';
+    const isDeleteDisabled = (order: Order): boolean => order.status === 'completed' || order.status === 'partial' || order.status === 'depo_due';
 
     if (isLoading) return <Loader fullScreen message="Syncing sales..." />;
     if (isError) return <ErrorState description="Unable to fetch sales" onRetry={refetch} />;
@@ -326,7 +323,7 @@ const InvoicesPage = () => {
                                     {ordersToPrint.flatMap((order) => {
                                         const items = order.items && order.items.length > 0 ? order.items : [];
                                         const customerName = order.customer?.name ?? 'Walk-in';
-                                        const statusLabel = order.status === 'completed' ? 'Paid' : order.status === 'partial' ? 'Partial' : 'Unpaid';
+                                        const statusLabel = order.status === 'completed' ? 'Settled' : order.status === 'depo_due' ? 'Depo Due' : order.status === 'partial' ? 'Distributor Due' : 'Distributor Due';
                                         return items.length > 0
                                             ? items.map((item: OrderItem, itemIndex: number) => (
                                                 <tr key={`${order._id}-${itemIndex}`}>
@@ -434,17 +431,21 @@ const InvoicesPage = () => {
 
             <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                 {[
-                    { label: 'Total Sales', value: allOrdersData?.meta?.total ?? 0, delta: '+5.62%', color: 'blue', icon: '📊' },
-                    { label: 'Completed Sales', value: allOrders.filter((o) => o.status === 'completed').length, delta: '+2.14%', color: 'emerald', icon: '✅' },
+                    { label: 'Total Invoices', value: allOrdersData?.meta?.total ?? 0, delta: '+5.62%', color: 'blue', icon: '📊' },
+                    { label: 'Settled', value: allOrders.filter((o) => o.status === 'completed').length, delta: '+2.14%', color: 'emerald', icon: '✅' },
                     {
-                        label: 'Unpaid Amount',
+                        label: 'Distributor Due',
                         value: `৳${allOrders.filter(o => o.status === 'pending' || o.status === 'partial').reduce((sum, o) => {
                             if (o.status === 'pending') return sum + (o.totalAmount || 0);
                             return sum + Math.max(0, (o.totalAmount || 0) - (o.paidAmount || 0));
                         }, 0).toLocaleString()}`,
                         delta: '-1.12%', color: 'amber', icon: '⏳'
                     },
-                    { label: 'Total Sale Value', value: `৳${allOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString()}`, delta: '+8.24%', color: 'purple', icon: '💰' },
+                    {
+                        label: 'Depo Due',
+                        value: `৳${allOrders.filter(o => o.status === 'depo_due').reduce((sum, o) => sum + Math.max(0, (o.paidAmount || 0) - (o.totalAmount || 0)), 0).toLocaleString()}`,
+                        delta: '+0.00%', color: 'purple', icon: '🏪'
+                    },
                 ].map((card) => (
                     <div key={card.label} className="group relative overflow-hidden rounded-sm border border-white/70 bg-linear-to-br from-white/95 to-slate-50/95 p-6 shadow-lg shadow-slate-200/40 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1">
                         <div className="flex items-start justify-between">
@@ -546,7 +547,9 @@ const InvoicesPage = () => {
                                 const paidAmount = invoice.status === 'completed'
                                     ? invoice.totalAmount
                                     : (invoice.paidAmount || 0);
-                                const dueAmount = invoice.totalAmount - paidAmount;
+                                // positive = distributor owes depo; negative = depo owes distributor
+                                const balanceAmount = invoice.totalAmount - paidAmount;
+                                const dueAmount = balanceAmount; // kept for compat in modal trigger below
 
                                 return (
                                     <tr key={invoice._id} className="transition hover:bg-slate-50/60">
@@ -566,17 +569,23 @@ const InvoicesPage = () => {
                                                     ৳{invoice.totalAmount.toLocaleString()}
                                                 </div>
                                                 <div className="text-xs font-medium text-slate-500 mt-0.5">
-                                                    Paid: <span className={
+                                                    Online: <span className={
                                                         invoice.status === 'completed' ? 'text-emerald-600' :
-                                                            invoice.status === 'partial' ? 'text-blue-600' :
-                                                                'text-slate-400'
+                                                        invoice.status === 'depo_due' ? 'text-blue-600' :
+                                                        invoice.status === 'partial' ? 'text-amber-600' :
+                                                        'text-slate-400'
                                                     }>
                                                         ৳{paidAmount.toLocaleString()}
                                                     </span>
                                                 </div>
-                                                {dueAmount > 0 && (
+                                                {balanceAmount > 0 && (
                                                     <div className="text-xs text-red-500 mt-0.5">
-                                                        Due: ৳{dueAmount.toLocaleString()}
+                                                        Distributor Due: ৳{balanceAmount.toLocaleString()}
+                                                    </div>
+                                                )}
+                                                {balanceAmount < 0 && (
+                                                    <div className="text-xs text-blue-600 font-semibold mt-0.5">
+                                                        Depo Due: ৳{Math.abs(balanceAmount).toLocaleString()}
                                                     </div>
                                                 )}
                                             </td>
@@ -609,49 +618,32 @@ const InvoicesPage = () => {
                                         {visibleColumns.status && (
                                             <td className="py-2.5 pr-4">
                                                 <div className="flex items-center gap-2">
-                                                    <select
-                                                        value={invoice.status}
-                                                        onChange={(e) => handleStatusChange(invoice._id, e.target.value)}
-                                                        disabled={isOrderFullyProtected(invoice)}
-                                                        className={`h-8 rounded-sm border-slate-200 text-xs font-semibold uppercase tracking-wider focus:ring-2 focus:ring-brand/20 ${isOrderFullyProtected(invoice)
-                                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200'
-                                                            : invoice.status === 'completed'
-                                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                                : invoice.status === 'pending'
-                                                                    ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                                                    : invoice.status === 'partial'
-                                                                        ? 'bg-blue-50 text-blue-600 border-blue-200'
-                                                                        : 'bg-red-50 text-red-600 border-red-200'
-                                                            }`}
-                                                    >
-                                                        {invoice.status === 'pending' && (
-                                                            <>
-                                                                <option value="pending">Unpaid</option>
-                                                                <option value="partial">Partial</option>
-                                                                <option value="completed">Paid</option>
-                                                            </>
-                                                        )}
-                                                        {invoice.status === 'partial' && (
-                                                            <>
-                                                                <option value="partial">Partial</option>
-                                                                <option value="completed">Paid</option>
-                                                            </>
-                                                        )}
-                                                        {invoice.status === 'completed' && (
-                                                            <option value="completed">Paid</option>
-                                                        )}
-                                                    </select>
-                                                    {invoice.status === 'partial' && dueAmount > 0 && (
+                                                    {/* Status badge */}
+                                                    <span className={`inline-flex items-center rounded-sm px-2 py-1 text-[10px] font-semibold ${
+                                                        invoice.status === 'completed'
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                            : invoice.status === 'depo_due'
+                                                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                            : invoice.status === 'partial'
+                                                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                            : 'bg-red-50 text-red-700 border border-red-200'
+                                                    }`}>
+                                                        {invoice.status === 'completed' ? 'Settled'
+                                                            : invoice.status === 'depo_due' ? 'Depo Due'
+                                                            : 'Distributor Due'}
+                                                    </span>
+                                                    {/* Record online payment button for pending/partial */}
+                                                    {(invoice.status === 'pending' || invoice.status === 'partial') && (
                                                         <button
                                                             onClick={() => {
                                                                 setSelectedOrderId(invoice._id);
                                                                 setPartialAmount('');
                                                                 setIsPartialModalOpen(true);
                                                             }}
-                                                            className="inline-flex items-center gap-1 rounded-sm bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 border border-blue-200 transition-colors"
-                                                            title="Add Payment"
+                                                            className="inline-flex items-center gap-1 rounded-sm bg-brand/10 px-2 py-1 text-[10px] font-semibold text-brand hover:bg-brand/20 border border-brand/20 transition-colors"
+                                                            title="Record Online Payment"
                                                         >
-                                                            + Add
+                                                            + Online
                                                         </button>
                                                     )}
                                                 </div>
@@ -725,24 +717,26 @@ const InvoicesPage = () => {
                 </div>
             </section>
 
-            {/* Partial Payment Modal */}
+            {/* Record Online Payment Modal */}
             {isPartialModalOpen && selectedOrderId && (() => {
                 const order = invoices.find(inv => inv._id === selectedOrderId);
                 if (!order) return null;
 
                 const grandTotal = order.totalAmount;
                 const currentPaidAmount = order.paidAmount || 0;
-                const dueAmount = grandTotal - currentPaidAmount;
+                const distributorDue = grandTotal - currentPaidAmount;
                 const additionalAmount = partialAmount ? parseFloat(partialAmount) : 0;
-                const maxAdditionalAmount = Math.max(0, dueAmount);
+                const newTotalPaid = currentPaidAmount + additionalAmount;
+                const newBalance = grandTotal - newTotalPaid;
 
                 return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                         <div className="w-full max-w-md rounded-sm bg-white p-6 shadow-2xl">
                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-bold text-slate-900">
-                                    {order.status === 'partial' ? 'Add Payment' : 'Partial Payment'}
-                                </h3>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900">Record Online Payment</h3>
+                                    <p className="text-xs text-slate-400 mt-0.5">{order.orderNumber} · {order.customer?.name}</p>
+                                </div>
                                 <button
                                     onClick={() => { setIsPartialModalOpen(false); setSelectedOrderId(null); setPartialAmount(''); }}
                                     className="rounded-sm p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
@@ -752,52 +746,50 @@ const InvoicesPage = () => {
                             </div>
                             <form onSubmit={handlePartialSubmit}>
                                 <div className="mb-4 space-y-3">
-                                    <div className="rounded-sm border border-slate-200 bg-slate-50 p-4">
-                                        <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Order</p>
-                                        <p className="font-semibold text-slate-900">{order.orderNumber}</p>
-                                    </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="rounded-sm border border-slate-200 bg-slate-50 p-4">
-                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Grand Total</p>
+                                        <div className="rounded-sm border border-slate-200 bg-slate-50 p-3">
+                                            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Invoice Total</p>
                                             <p className="font-semibold text-slate-900">৳{grandTotal.toLocaleString()}</p>
                                         </div>
-                                        <div className="rounded-sm border border-slate-200 bg-slate-50 p-4">
-                                            <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Due Amount</p>
-                                            <p className="font-semibold text-red-600">৳{dueAmount.toLocaleString()}</p>
+                                        <div className="rounded-sm border border-red-100 bg-red-50 p-3">
+                                            <p className="text-[10px] text-red-500 uppercase tracking-wider mb-1">Distributor Due</p>
+                                            <p className="font-semibold text-red-600">৳{distributorDue.toLocaleString()}</p>
                                         </div>
                                     </div>
-                                    {order.status === 'partial' && (
-                                        <div className="rounded-sm border border-slate-200 bg-blue-50 p-4">
-                                            <p className="text-xs text-blue-600 uppercase tracking-wider mb-1">Already Paid</p>
-                                            <p className="font-semibold text-blue-600">৳{currentPaidAmount.toLocaleString()}</p>
+                                    {currentPaidAmount > 0 && (
+                                        <div className="rounded-sm border border-amber-100 bg-amber-50 p-3">
+                                            <p className="text-[10px] text-amber-600 uppercase tracking-wider mb-1">Already Paid Online</p>
+                                            <p className="font-semibold text-amber-700">৳{currentPaidAmount.toLocaleString()}</p>
                                         </div>
                                     )}
                                     {additionalAmount > 0 && (
-                                        <div className="rounded-sm border border-slate-200 bg-emerald-50 p-4">
-                                            <p className="text-xs text-emerald-600 uppercase tracking-wider mb-1">New Total Paid</p>
-                                            <p className="font-semibold text-emerald-600">৳{(currentPaidAmount + additionalAmount).toLocaleString()}</p>
+                                        <div className={`rounded-sm border p-3 ${newBalance < 0 ? 'border-blue-200 bg-blue-50' : newBalance === 0 ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+                                            <p className={`text-[10px] uppercase tracking-wider mb-1 ${newBalance < 0 ? 'text-blue-600' : newBalance === 0 ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                                {newBalance < 0 ? `Depo Due after payment` : newBalance === 0 ? 'Settled' : 'Still Distributor Due'}
+                                            </p>
+                                            <p className={`font-semibold ${newBalance < 0 ? 'text-blue-700' : newBalance === 0 ? 'text-emerald-700' : 'text-slate-700'}`}>
+                                                {newBalance < 0 ? `৳${Math.abs(newBalance).toLocaleString()}` : newBalance === 0 ? '—' : `৳${newBalance.toLocaleString()}`}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
                                 <div className="mb-6">
                                     <label className="mb-2 block text-sm font-medium text-slate-700">
-                                        {order.status === 'partial' ? 'Additional Payment Amount (৳)' : 'Payment Amount (৳)'}
+                                        Online Payment Amount (৳)
                                     </label>
                                     <input
                                         type="number"
                                         value={partialAmount}
                                         onChange={(e) => setPartialAmount(e.target.value)}
-                                        placeholder="Enter amount"
+                                        placeholder="Enter amount paid online"
                                         className="w-full rounded-sm border border-slate-200 px-4 py-3 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                         autoFocus
-                                        min="0"
-                                        max={maxAdditionalAmount}
+                                        min="0.01"
                                         step="0.01"
                                         required
                                     />
-                                    <p className="mt-1 text-xs text-slate-500">
-                                        Maximum: ৳{maxAdditionalAmount.toLocaleString()}
-                                        {order.status === 'partial' && ` (Remaining due amount)`}
+                                    <p className="mt-1 text-xs text-slate-400">
+                                        If distributor pays more than the invoice total, the excess becomes <span className="font-semibold text-blue-600">Depo Due</span>.
                                     </p>
                                 </div>
                                 <div className="flex gap-3">
@@ -810,10 +802,10 @@ const InvoicesPage = () => {
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={!partialAmount || additionalAmount <= 0 || additionalAmount > maxAdditionalAmount}
+                                        disabled={!partialAmount || additionalAmount <= 0}
                                         className="flex-1 rounded-sm bg-brand px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:shadow-xl hover:shadow-brand/40 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {order.status === 'partial' ? 'Add Payment' : 'Confirm Payment'}
+                                        Confirm Online Payment
                                     </button>
                                 </div>
                             </form>

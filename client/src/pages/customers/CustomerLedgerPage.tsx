@@ -217,9 +217,7 @@ const CustomerLedgerPage = () => {
         customerOrders.forEach((order: Order) => {
             invoices += 1;
             totalAmount += order.totalAmount;
-            const orderPaid = order.status === 'completed'
-                ? order.totalAmount
-                : (order.paidAmount || 0);
+            const orderPaid = order.paidAmount || 0;
             paidAmount += orderPaid;
 
             if (dayjs(order.createdAt).isBefore(dayjs(firstOrder))) firstOrder = order.createdAt;
@@ -279,10 +277,7 @@ const CustomerLedgerPage = () => {
         if (!customer) return null;
 
         const totalSales = filteredOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-        const totalPaid = filteredOrders.reduce((sum, order) => {
-            const paid = order.status === 'completed' ? order.totalAmount : (order.paidAmount || 0);
-            return sum + paid;
-        }, 0);
+        const totalPaid = filteredOrders.reduce((sum, order) => sum + (order.paidAmount || 0), 0);
 
         return {
             totalSales,
@@ -439,10 +434,8 @@ const CustomerLedgerPage = () => {
                             <tbody className="divide-y divide-slate-100 bg-white print:divide-slate-200">
                                 {filteredOrders.map((order, idx) => {
                                     const grandTotal = order.totalAmount;
-                                    const actualPaidAmount = order.status === 'completed'
-                                        ? grandTotal
-                                        : (order.paidAmount || 0);
-                                    const dueAmount = grandTotal - actualPaidAmount;
+                                    const actualPaidAmount = order.paidAmount || 0;
+                                    const balance = grandTotal - actualPaidAmount;
 
                                     return (
                                         <tr key={order._id} className="hover:bg-slate-50 print:hover:bg-white">
@@ -451,11 +444,15 @@ const CustomerLedgerPage = () => {
                                             <td className="px-2 py-2 text-slate-600 print-table-td">{dayjs(order.createdAt).format('DD MMM YY')}</td>
                                             <td className="px-2 py-2 font-semibold text-slate-900 print-table-td">৳{grandTotal.toLocaleString()}</td>
                                             <td className="px-2 py-2 text-emerald-600 print-table-td">৳{actualPaidAmount.toLocaleString()}</td>
-                                            <td className={`px-2 py-2 font-semibold ${dueAmount > 0 ? 'text-red-600' : 'text-emerald-600'} print-table-td`}>
-                                                ৳{dueAmount.toLocaleString()}
+                                            <td className={`px-2 py-2 font-semibold print-table-td ${balance > 0 ? 'text-red-600' : balance < 0 ? 'text-blue-600' : 'text-emerald-600'}`}>
+                                                {balance > 0
+                                                    ? `৳${balance.toLocaleString()}`
+                                                    : balance < 0
+                                                    ? `Depo ৳${Math.abs(balance).toLocaleString()}`
+                                                    : '—'}
                                             </td>
                                             <td className="px-2 py-2 print-table-td">
-                                                <StatusBadge status={order.status === 'completed' ? 'paid' : order.status === 'partial' ? 'partially paid' : 'pending'} />
+                                                <StatusBadge status={order.status} />
                                             </td>
                                             <td className="px-2 py-2 no-print print-table-td">
                                                 <button
@@ -482,7 +479,7 @@ const CustomerLedgerPage = () => {
             {paymentModalOpen && selectedOrderForPayment && (() => {
                 const order = selectedOrderForPayment;
                 const grandTotal = order.totalAmount;
-                const currentPaid = order.status === 'completed' ? grandTotal : (order.paidAmount || 0);
+                const currentPaid = order.paidAmount || 0;
                 const dueAmount = grandTotal - currentPaid;
 
                 return (
@@ -528,14 +525,10 @@ const CustomerLedgerPage = () => {
 
                                 const paymentValue = parseFloat(paymentAmount);
                                 const newPaidAmount = currentPaid + paymentValue;
-                                const newDueAmount = grandTotal - newPaidAmount;
+                                const newBalance = grandTotal - newPaidAmount;
 
-                                let newStatus: 'pending' | 'partial' | 'completed' = 'pending';
-                                if (newDueAmount <= 0) {
-                                    newStatus = 'completed';
-                                } else if (newPaidAmount > 0) {
-                                    newStatus = 'partial';
-                                }
+                                const newStatus: 'pending' | 'partial' | 'completed' | 'depo_due' =
+                                    newBalance < 0 ? 'depo_due' : newBalance === 0 ? 'completed' : newPaidAmount > 0 ? 'partial' : 'pending';
 
                                 try {
                                     await updateOrder({

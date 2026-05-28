@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export type TOrderStatus = "pending" | "completed" | "partial";
+export type TOrderStatus = "pending" | "completed" | "partial" | "depo_due";
 
 export type TOrderItem = {
   product: Types.ObjectId;

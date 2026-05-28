@@ -32,7 +32,7 @@ const createOrderValidationSchema = z.object({
     paidAmount: z.number().min(0).optional(),
     paymentDate: z.string().optional(),
     customerId: z.string().optional(),
-    status: z.enum(["pending", "completed", "partial"]).optional(),
+    status: z.enum(["pending", "completed", "partial", "depo_due"]).optional(),
     paymentMethod: z.string().optional(),
     notes: z.string().optional(),
   }),
@@ -48,7 +48,7 @@ const updateOrderValidationSchema = z.object({
         address: z.string().optional(),
       })
       .optional(),
-    status: z.enum(["pending", "completed", "partial"]).optional(),
+    status: z.enum(["pending", "completed", "partial", "depo_due"]).optional(),
     paidAmount: z.number().min(0).optional(),
     paymentMethod: z.string().optional(),
     notes: z.string().optional(),

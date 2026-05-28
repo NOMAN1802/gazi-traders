@@ -212,10 +212,10 @@ const updateOrder = async (id: string, payload: Partial<TOrder>) => {
     }
 
     // Check status transition rules
-    if (order.status === "completed") {
+    if (order.status === "completed" || order.status === "depo_due") {
       throw new AppError(
         httpStatus.BAD_REQUEST,
-        "Cannot update order that is already completed"
+        "Cannot update an order that is already settled or has a depo due"
       );
     }
 
@@ -311,8 +311,8 @@ const deleteOrder = async (id: string) => {
       throw new AppError(httpStatus.NOT_FOUND, "Order not found");
     }
 
-    if (order.status === "completed" || order.status === "partial") {
-      throw new AppError(httpStatus.BAD_REQUEST, "Cannot delete completed or partial order");
+    if (order.status === "completed" || order.status === "partial" || order.status === "depo_due") {
+      throw new AppError(httpStatus.BAD_REQUEST, "Cannot delete a settled, partial, or depo-due order");
     }
 
     // Restore stock when deleting order (since stock was deducted on creation)

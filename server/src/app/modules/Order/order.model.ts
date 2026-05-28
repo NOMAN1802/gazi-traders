@@ -47,7 +47,7 @@ const OrderSchema = new Schema<TOrder>(
     customerId: { type: Schema.Types.ObjectId, ref: "Customer", required: false },
     status: {
       type: String,
-      enum: ["pending", "completed", "partial"],
+      enum: ["pending", "completed", "partial", "depo_due"],
       default: "pending",
     },
     paymentMethod: { type: String },
