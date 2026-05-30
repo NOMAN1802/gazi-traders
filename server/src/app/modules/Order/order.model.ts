@@ -31,6 +31,7 @@ const OrderSchema = new Schema<TOrder>(
       phone: { type: String },
       address: { type: String },
     },
+    supplierName: { type: String, required: false },
     items: {
       type: [OrderItemSchema],
       required: true,
@@ -41,7 +42,7 @@ const OrderSchema = new Schema<TOrder>(
     tax: { type: Number, default: 0, min: 0 },
     additionalCharges: { type: Number, default: 0, min: 0 },
     totalAmount: { type: Number, required: true, min: 0 },
-    previousDue: { type: Number, default: 0, min: 0 },
+    previousDue: { type: Number, default: 0 },
     paidAmount: { type: Number, default: 0, min: 0 },
     paymentDate: { type: Date },
     customerId: { type: Schema.Types.ObjectId, ref: "Customer", required: false },

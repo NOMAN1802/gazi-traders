@@ -8,7 +8,6 @@ import {
     HomeIcon,
     RectangleGroupIcon,
     ShoppingBagIcon,
-    ShoppingCartIcon,
     UserGroupIcon,
     UserPlusIcon,
     XMarkIcon,
@@ -56,7 +55,6 @@ const getNavigation = (userRole?: string): NavigationItem[] => {
                 { name: 'All Products', to: '/products', icon: ShoppingBagIcon },
                 { name: 'Add Stock', to: '/stock-intake/add', icon: DocumentPlusIcon },
                 { name: 'Stock Intake', to: '/stock-intake', icon: ClipboardDocumentListIcon },
-                { name: 'Daily Stock', to: '/daily-stock', icon: CalendarDaysIcon },
                 { name: 'Categories', to: '/categories', icon: TagIcon },
                 { name: 'Units', to: '/units', icon: RectangleStackIcon },
                 { name: 'Factories', to: '/suppliers', icon: BuildingStorefrontIcon },
@@ -110,7 +108,7 @@ const getNavigation = (userRole?: string): NavigationItem[] => {
             subItems: [
                 { name: 'Overview', to: '/reports', icon: BanknotesIcon },
                 { name: 'Daily Report', to: '/reports/daily', icon: CalendarDaysIcon },
-                { name: 'Purchase Report', to: '/reports/purchase', icon: ShoppingCartIcon },
+                { name: 'Daily Stock', to: '/reports/daily-stock', icon: ClipboardDocumentListIcon },
                 { name: 'Sale Report', to: '/reports/sale', icon: CreditCardIcon },
                 { name: 'Stock Report', to: '/reports/stock', icon: RectangleStackIcon },
             ]

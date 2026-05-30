@@ -196,6 +196,7 @@ const CreateSalePage = () => {
                     ...(selectedCustomer.phone && { phone: selectedCustomer.phone }),
                     ...(selectedCustomer.address && { address: selectedCustomer.address }),
                 },
+                ...(currentSupplier && { supplierName: currentSupplier.name }),
                 customerId: selectedCustomer._id,
                 items: orderItems,
                 subtotal: totals.subtotal,
@@ -588,6 +589,12 @@ const CreateSalePage = () => {
                                 <div className="flex justify-between text-xs text-slate-500">
                                     <span>Previous Due</span>
                                     <span className="font-mono text-danger">+ {fmt(previousDue)}</span>
+                                </div>
+                            )}
+                            {previousDue < 0 && (
+                                <div className="flex justify-between text-xs text-slate-500">
+                                    <span>Depo Credit</span>
+                                    <span className="font-mono text-blue-600">− {fmt(Math.abs(previousDue))}</span>
                                 </div>
                             )}
                             <div className="flex justify-between text-sm font-bold text-slate-900 border-t border-slate-200 pt-1.5 mt-1.5">

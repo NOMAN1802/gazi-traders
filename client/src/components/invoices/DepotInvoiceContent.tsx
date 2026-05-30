@@ -2,9 +2,6 @@ import dayjs from 'dayjs';
 import gaziLogo from '@/assets/gaziLogo.svg';
 import type { Order } from '@/services/ordersApi';
 
-const formatMethod = (m?: string) =>
-    m ? m.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
-
 const SHOP_NAME = 'M/S.Gazi Traders';
 const SHOP_SUBTITLE = 'Depot Invoice';
 const SHOP_MOBILE = '01716781486';
@@ -15,10 +12,28 @@ interface Props {
 
 const DepotInvoiceContent = ({ order }: Props) => {
     const totalAmount = order.totalAmount;
-    const previousDue = order.previousDue ?? 0;
-    const subTotal = totalAmount + previousDue;
+    const rawPreviousDue = order.previousDue ?? 0;
     const paidAmount = order.paidAmount ?? 0;
-    const adjust = subTotal - paidAmount;
+
+    // Previous credit (depo owes distributor from a past depo_due → reduces what they pay now)
+    const depoDuePrev = rawPreviousDue < 0 ? Math.abs(rawPreviousDue) : 0;
+    // Previous distributor debt (distributor owed depo → adds to what they pay now)
+    const distDuePrev = rawPreviousDue > 0 ? rawPreviousDue : 0;
+
+    // Net amount distributor needs to pay for this invoice
+    const subTotal = totalAmount - depoDuePrev + distDuePrev;
+
+    // Balance after the online payment
+    // positive → depo owes distributor (new Depo Due created by this transaction)
+    // negative → distributor still owes depo
+    const balance = paidAmount > 0 ? paidAmount - subTotal : 0;
+    const newDepoDue = Math.max(0, balance);   // carry forward to next invoice
+
+    // Detect which unit columns to show
+    const hasDozen   = order.items.some(i => i.unit === 'Dozen');
+    const hasCartoon = order.items.some(i => i.unit === 'Cartoon');
+    // Column count for padding rows
+    const colCount = 7 + (hasDozen ? 1 : 0) + (hasCartoon ? 1 : 0);
 
     return (
         <div style={{ fontFamily: 'Arial, sans-serif', fontSize: '11px', color: '#000', padding: '10px' }}>
@@ -47,9 +62,9 @@ const DepotInvoiceContent = ({ order }: Props) => {
                         <td style={{ verticalAlign: 'top', textAlign: 'right', width: '50%' }}>
                             <div style={{ fontWeight: '700' }}>DATE {dayjs(order.createdAt).format('DD.MM.YY')}</div>
                             <div style={{ color: '#555', fontSize: '10px' }}>#{order.orderNumber}</div>
-                            {order.paymentMethod && (
-                                <div style={{ fontSize: '10px', marginTop: '2px', color: '#555' }}>
-                                    Payment: {order.paymentMethod.replace('_', ' ')}
+                            {order.supplierName && (
+                                <div style={{ fontSize: '11px', fontWeight: '700', marginTop: '2px' }}>
+                                    {order.supplierName}
                                 </div>
                             )}
                         </td>
@@ -65,8 +80,8 @@ const DepotInvoiceContent = ({ order }: Props) => {
                         <th style={{ ...th, textAlign: 'left', minWidth: '130px' }}>Product Name</th>
                         <th style={th}>Category</th>
                         <th style={th}>Rate</th>
-                        <th style={th}>Dozen</th>
-                        <th style={th}>Cartoon</th>
+                        {hasDozen   && <th style={th}>Dozen</th>}
+                        {hasCartoon && <th style={th}>Cartoon</th>}
                         <th style={th}>Quantity</th>
                         <th style={th}>Amount</th>
                         <th style={th}>Free</th>
@@ -74,11 +89,11 @@ const DepotInvoiceContent = ({ order }: Props) => {
                 </thead>
                 <tbody>
                     {order.items.map((item, idx) => {
-                        const isDozen = item.unit === 'Dozen';
+                        const isDozen   = item.unit === 'Dozen';
                         const isCartoon = item.unit === 'Cartoon';
-                        const dozenVal = isDozen && item.inputQty ? item.inputQty : '';
+                        const dozenVal   = isDozen   && item.inputQty ? item.inputQty : '';
                         const cartoonVal = isCartoon && item.inputQty ? item.inputQty : '';
-                        const freeVal = item.free && item.free > 0 ? item.free : '';
+                        const freeVal    = item.free && item.free > 0 ? item.free : '';
 
                         return (
                             <tr key={idx} style={{ borderBottom: '1px solid #ccc' }}>
@@ -86,8 +101,8 @@ const DepotInvoiceContent = ({ order }: Props) => {
                                 <td style={{ ...td, textAlign: 'left' }}>{item.productName}</td>
                                 <td style={td}>{item.categoryName || '—'}</td>
                                 <td style={td}>{item.unitPrice.toFixed(2)}</td>
-                                <td style={td}>{dozenVal}</td>
-                                <td style={td}>{cartoonVal}</td>
+                                {hasDozen   && <td style={td}>{dozenVal}</td>}
+                                {hasCartoon && <td style={td}>{cartoonVal}</td>}
                                 <td style={td}>{item.quantity.toLocaleString()}</td>
                                 <td style={{ ...td, textAlign: 'right' }}>
                                     {item.totalPrice > 0 ? item.totalPrice.toFixed(2) : ''}
@@ -96,10 +111,10 @@ const DepotInvoiceContent = ({ order }: Props) => {
                             </tr>
                         );
                     })}
-                    {/* Padding rows for visual consistency */}
+                    {/* Padding rows */}
                     {order.items.length < 5 && Array.from({ length: 5 - order.items.length }).map((_, i) => (
                         <tr key={`pad-${i}`}>
-                            {Array.from({ length: 9 }).map((__, j) => (
+                            {Array.from({ length: colCount }).map((__, j) => (
                                 <td key={j} style={{ ...td, height: '18px' }}></td>
                             ))}
                         </tr>
@@ -111,18 +126,35 @@ const DepotInvoiceContent = ({ order }: Props) => {
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #000', borderTop: 'none' }}>
                 <tbody>
                     <TotalRow label="Total Taka" value={totalAmount.toFixed(2)} bold />
-                    <TotalRow label="Depo Due" value={previousDue > 0 ? previousDue.toFixed(2) : ''} />
+
+                    {/* Depo Due from previous orders (credit being applied) */}
+                    {depoDuePrev > 0 && (
+                        <TotalRow label="Depo Due" value={depoDuePrev.toFixed(2)} />
+                    )}
+                    {/* Depo Due created by THIS transaction (distributor overpaid) */}
+                    {newDepoDue > 0 && depoDuePrev === 0 && (
+                        <TotalRow label="Depo Due" value={newDepoDue.toFixed(2)} />
+                    )}
+                    {/* If no depo due at all, show blank Depo Due row for format consistency */}
+                    {depoDuePrev === 0 && newDepoDue === 0 && (
+                        <TotalRow label="Depo Due" value="" />
+                    )}
+
                     <TotalRow label="Sub Total" value={subTotal.toFixed(2)} bold />
+
+                    {/* Online payment line */}
                     {paidAmount > 0 && (
                         <TotalRow
-                            label={[
-                                dayjs(order.paymentDate ?? order.createdAt).format('DD.MM.YY'),
-                                formatMethod(order.paymentMethod),
-                            ].filter(Boolean).join(' ')}
+                            label={dayjs(order.paymentDate ?? order.createdAt).format('DD.MM.YY') + ' Online'}
                             value={paidAmount.toFixed(2)}
                         />
                     )}
-                    <TotalRow label="Adjust" value={adjust !== subTotal ? adjust.toFixed(2) : ''} />
+
+                    {/* Adjust = new Depo Due carry-forward (always positive or blank) */}
+                    <TotalRow
+                        label="Adjust"
+                        value={newDepoDue > 0 ? newDepoDue.toFixed(2) : ''}
+                    />
                     <TotalRow label="Others" value="" />
                 </tbody>
             </table>

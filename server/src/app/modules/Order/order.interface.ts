@@ -29,6 +29,7 @@ export type TOrder = {
     phone?: string;
     address?: string;
   };
+  supplierName?: string;
   items: TOrderItem[];
   subtotal: number;
   discount?: number;

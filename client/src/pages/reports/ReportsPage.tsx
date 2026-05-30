@@ -13,9 +13,7 @@ import {
     useGetRevenueReportQuery,
     useGetExpenseReportQuery,
 } from '@/services/reportsApi';
-import { useGetProductsQuery, type Product } from '@/services/productsApi';
-import { useGetOrdersQuery, type Order, type OrderItem } from '@/services/ordersApi';
-import { type Expense } from '@/services/expensesApi';
+import { useGetOrdersQuery, type Order } from '@/services/ordersApi';
 import ReportsHeader from './ReportsHeader';
 import DateRangeSelector from './DateRangeSelector';
 import FinancialOverviewCards from './FinancialOverviewCards';
@@ -78,9 +76,6 @@ const ReportsPage = () => {
     const { isLoading: loadingRevenue, refetch: refetchRevenue } = useGetRevenueReportQuery(getDateRangeParams);
     const { data: expenseReportData, isLoading: loadingExpenses, refetch: refetchExpenses } = useGetExpenseReportQuery(getDateRangeParams);
     
-    // Fetch products to get purchase prices for profit calculation
-    const { data: productsData } = useGetProductsQuery({ limit: 10000 });
-    // Fetch all orders (we'll filter by date range client-side for profit calculation)
     const { data: ordersData } = useGetOrdersQuery({ limit: 10000 });
 
     const isLoading = loadingFinancial || loadingStock || loadingOrders || loadingRevenue || loadingExpenses;
@@ -282,42 +277,7 @@ const ReportsPage = () => {
             ? `${dayjs(customStartDate).format('DD MMM YYYY')} - ${dayjs(customEndDate).format('DD MMM YYYY')}`
             : dateRange.charAt(0).toUpperCase() + dateRange.slice(1);
 
-        // Calculate Total Purchase Value from expenses with category === 'product_purchase'
-        // Note: expenseReportData is already filtered by date range from the query
-        const totalPurchaseValue = expenseReportData?.expenses
-            ? expenseReportData.expenses
-                .filter((expense: Expense) => expense.category === 'product_purchase')
-                .reduce((sum: number, expense: Expense) => sum + (expense.amount || 0), 0)
-            : 0;
-
-        // Calculate profit based on actual sales transactions for the report
-        // Formula: For each order, for each product: (Sale Price - Purchase Price) * Quantity = Product Profit
-        // Sum of all Product Profits = Total Profit
-        let reportProfit = 0;
-        if (ordersData?.result && productsData?.products) {
-            const products = productsData.products;
-            ordersData.result.forEach((order: Order) => {
-                if (order.items && Array.isArray(order.items)) {
-                    order.items.forEach((item: OrderItem) => {
-                        const productId = typeof item.product === 'string' ? item.product : (typeof item.product === 'object' ? item.product._id : undefined);
-                        const product = products.find((p: Product) => p._id === productId);
-                        
-                        if (product) {
-                            // Product Sale Price from order item
-                            const salePrice = item.unitPrice || 0;
-                            // Product Purchase Price from product data
-                            const purchasePrice = product.purchasePrice || 0;
-                            // Actual quantity sold (original quantity minus returned quantity)
-                            const soldQuantity = (item.quantity || 0);
-                            
-                            // Product Profit = (Sale Price - Purchase Price) * Sold Quantity
-                            const productProfit = (salePrice - purchasePrice) * soldQuantity;
-                            reportProfit += productProfit;
-                        }
-                    });
-                }
-            });
-        }
+        const reportProfit = (financialData.revenue || 0) - (financialData.expenses || 0);
 
         return (
             <div style={{ fontFamily: 'Arial, sans-serif', padding: '20mm', width: '210mm', margin: '0 auto', color: '#000', backgroundColor: '#ffffff' }}>
@@ -547,16 +507,9 @@ const ReportsPage = () => {
                                     ৳{stockData.summary.totalStockValue ? stockData.summary.totalStockValue.toLocaleString() : '0'}
                                 </td>
                             </tr>
-                            <tr>
-                                <td>Total Purchase Value</td>
-                                <td className="text-right">
-                                    ৳{totalPurchaseValue.toLocaleString()}
-                                </td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
-
 
                 {/* Footer */}
                 <div className="print-footer">
@@ -567,69 +520,14 @@ const ReportsPage = () => {
                 </div>
             </div>
         );
-    }, [dateRange, customStartDate, customEndDate, expenseReportData, financialData, dueAmount, orderData, stockData, ordersData, productsData]);
+    }, [dateRange, customStartDate, customEndDate, financialData, dueAmount, orderData, stockData]);
 
     // Calculate financial metrics
     const totalSales = financialData?.revenue || 0;
-    const totalPurchases = useMemo(() => {
-        if (!expenseReportData?.expenses) return 0;
-        return expenseReportData.expenses
-            .filter((exp: Expense) => exp.category === 'product_purchase')
-            .reduce((sum: number, exp: Expense) => sum + (exp.amount || 0), 0);
-    }, [expenseReportData]);
     const totalExpenses = financialData?.expenses || 0;
-    const operatingExpenses = totalExpenses - totalPurchases;
     
-    // Calculate profit based on actual sales transactions
-    // Formula: For each order, for each product: (Sale Price - Purchase Price) * Quantity = Product Profit
-    // Sum of all Product Profits = Total Profit
-    const profit = useMemo(() => {
-        if (!ordersData?.result || !productsData?.products) return 0;
-
-        const products = productsData.products;
-        let totalProfit = 0;
-
-        // Filter orders by date range if date range is specified
-        let filteredOrders = ordersData.result;
-        if (getDateRangeParams && getDateRangeParams.startDate && getDateRangeParams.endDate) {
-            const { startDate, endDate } = getDateRangeParams;
-            filteredOrders = ordersData.result.filter((order: Order) => {
-                const orderDate = dayjs(order.createdAt);
-                const start = dayjs(startDate);
-                const end = dayjs(endDate);
-                return orderDate.isAfter(start.subtract(1, 'millisecond')) && orderDate.isBefore(end.add(1, 'millisecond'));
-            });
-        }
-
-        // Calculate profit from filtered orders
-        filteredOrders.forEach((order: Order) => {
-            if (order.items && Array.isArray(order.items)) {
-                order.items.forEach((item: OrderItem) => {
-                    const productId = typeof item.product === 'string' ? item.product : (typeof item.product === 'object' ? item.product._id : undefined);
-                    const product = products.find((p: Product) => p._id === productId);
-                    
-                    if (product) {
-                        // Product Sale Price from order item
-                        const salePrice = item.unitPrice || 0;
-                        // Product Purchase Price from product data
-                        const purchasePrice = product.purchasePrice || 0;
-                        // Actual quantity sold (original quantity minus returned quantity)
-                        const soldQuantity = (item.quantity || 0);
-                        
-                        // Product Profit = (Sale Price - Purchase Price) * Sold Quantity
-                        const productProfit = (salePrice - purchasePrice) * soldQuantity;
-                        totalProfit += productProfit;
-                    }
-                });
-            }
-        });
-
-        return totalProfit;
-    }, [ordersData, productsData, getDateRangeParams]);
-    // const grossProfit = totalSales - totalPurchases;
-    // const operatingProfit = grossProfit - operatingExpenses;
-    // const netProfit = operatingProfit - totalDamageValue - totalReturnValue;
-    // const profitMargin = totalSales > 0 ? ((netProfit / totalSales) * 100).toFixed(2) : '0.00';
+    // Profit = Total Sales Revenue − Total Expenses (no purchase price tracking)
+    const profit = totalSales - totalExpenses;
 
     // Early returns must come after all hooks
     if (isLoading) return <Loader fullScreen message="Compiling reports..." />;
@@ -649,16 +547,8 @@ const ReportsPage = () => {
             icon: '💰',
         },
         {
-            label: 'Total Purchases',
-            value: `৳${totalPurchases.toLocaleString()}`,
-            delta: '',
-            deltaLabel: '',
-            color: 'red' as const,
-            icon: '🛒',
-        },
-        {
             label: 'Operating Expenses',
-            value: `৳${operatingExpenses.toLocaleString()}`,
+            value: `৳${totalExpenses.toLocaleString()}`,
             delta: '',
             deltaLabel: '',
             color: 'orange' as const,
@@ -672,22 +562,6 @@ const ReportsPage = () => {
             color: profit >= 0 ? ('green' as const) : ('red' as const),
             icon: '📈',
         },
-        // {
-        //     label: 'Net Profit',
-        //     value: `৳${netProfit.toLocaleString()}`,
-        //     delta: netProfit >= 0 ? '+10%' : '-5%',
-        //     deltaLabel: 'vs last period',
-        //     color: netProfit >= 0 ? ('green' as const) : ('red' as const),
-        //     icon: '💵',
-        // },
-        // {
-        //     label: 'Profit Margin',
-        //     value: `${profitMargin}%`,
-        //     delta: '+2%',
-        //     deltaLabel: 'vs last period',
-        //     color: parseFloat(profitMargin) >= 0 ? ('green' as const) : ('red' as const),
-        //     icon: '📈',
-        // },
     ];
 
 

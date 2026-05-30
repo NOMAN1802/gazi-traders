@@ -23,7 +23,6 @@ import CreateCustomerPage from '@/pages/customers/CreateCustomerPage';
 import EditCustomerPage from '@/pages/customers/EditCustomerPage';
 import ReportsPage from '@/pages/reports/ReportsPage';
 import DailyReportPage from '@/pages/reports/DailyReportPage';
-import PurchaseReportPage from '@/pages/reports/PurchaseReportPage';
 import SaleReportPage from '@/pages/reports/SaleReportPage';
 import StockReportPage from '@/pages/reports/StockReportPage';
 import TransactionsPage from '@/pages/transactions/TransactionsPage';
@@ -81,7 +80,6 @@ function App() {
           <Route path="stock-intake" element={<StockIntakeListPage />} />
           <Route path="stock-intake/add" element={<AddStockPage />} />
           <Route path="stock-intake/:id" element={<StockIntakeDetailPage />} />
-          <Route path="daily-stock" element={<DailyStockPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="units" element={<UnitsPage />} />
           <Route path="suppliers" element={<SuppliersPage />} />
@@ -97,7 +95,7 @@ function App() {
           <Route element={<AdminRoute />}>
             <Route path="reports" element={<ReportsPage />} />
             <Route path="reports/daily" element={<DailyReportPage />} />
-            <Route path="reports/purchase" element={<PurchaseReportPage />} />
+            <Route path="reports/daily-stock" element={<DailyStockPage />} />
             <Route path="reports/sale" element={<SaleReportPage />} />
             <Route path="reports/stock" element={<StockReportPage />} />
           </Route>

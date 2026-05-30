@@ -25,6 +25,7 @@ export type Order = {
         email?: string;
         address?: string;
     };
+    supplierName?: string;
     customerId?: string;
     status: 'pending' | 'completed' | 'partial' | 'depo_due';
     totalAmount: number;
@@ -57,6 +58,7 @@ export type CreateOrderInput = {
         phone?: string;
         address?: string;
     };
+    supplierName?: string;
     customerId?: string;
     items: {
         product: string;

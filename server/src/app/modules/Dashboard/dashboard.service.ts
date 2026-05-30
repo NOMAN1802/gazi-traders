@@ -32,7 +32,7 @@ const getAdminDashboard = async (startDate?: Date, endDate?: Date) => {
       $group: {
         _id: null,
         totalStockValue: {
-          $sum: { $multiply: ['$stockQuantity', '$purchasePrice'] }
+          $sum: { $multiply: ['$stockQuantity', '$sellingPrice'] }
         },
       },
     },
